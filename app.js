@@ -18,7 +18,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: false }));
 // Disable header
 app.disable('x-powered-by');
 
-require('./server/routes/actividades/actividades')(app)
+require('./server/routes/actividades')(app)
 
 app.use('*', (req, res) => {
     res.status(404).send({ mensaje: `El recurso solicitado no existe!` });
