@@ -1,4 +1,4 @@
-CREATE DATABASE BDGYM;
+CREATE DATABASE DBGYM;
 
 CREATE TABLE ca_roles(
     id SERIAL PRIMARY KEY NOT NULL,
@@ -39,23 +39,23 @@ CREATE TABLE ca_membresias (
     id INT PRIMARY KEY NOT NULL,
     tipo VARCHAR(255) NOT NULL,
     descripcion TEXT NOT NULL,
-    precio DOUBLE PRECISION NOT NULL,
-    fecha_inicio DATE NOT NULL,
-    fecha_expiracion DATE NOT NULL
+    precio DOUBLE PRECISION NOT NULL
 );
 
-CREATE TABLE rel_inscripcion (
+CREATE TABLE rel_inscripciones (
     id INT PRIMARY KEY NOT NULL,
     id_usuario UUID NOT NULL,
     id_membresia INT NOT NULL,
     estatus BOOLEAN NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_expiracion DATE NOT NULL,
 
-    CONSTRAINT rel_inscripcion_id_usuario_fkey FOREIGN KEY (id_usuario)  
+    CONSTRAINT rel_inscripciones_id_usuario_fkey FOREIGN KEY (id_usuario)  
         REFERENCES ca_usuarios (id)
         ON UPDATE NO ACTION
         ON DELETE NO ACTION,
 
-    CONSTRAINT rel_inscripcion_id_membresia_fkey FOREIGN KEY (id_membresia) 
+    CONSTRAINT rel_inscripciones_id_membresia_fkey FOREIGN KEY (id_membresia) 
         REFERENCES ca_membresias (id)
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
@@ -83,12 +83,18 @@ CREATE TABLE ca_agenda_actividades (
     ON UPDATE NO ACTION
     ON DELETE NO ACTION,
 
-    CONSTRAINT rel_inscripcion_id_inscripcion_fkey FOREIGN KEY (id_inscripcion)
-    REFERENCES rel_inscripcion (id)
+    CONSTRAINT rel_inscripciones_id_inscripcion_fkey FOREIGN KEY (id_inscripcion)
+    REFERENCES rel_inscripciones (id)
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
 );
 
+-- agregar los roles
+
+INSERT INTO ca_roles(orden, descripcion) VALUES (1, 'Root');
+INSERT INTO ca_roles(orden, descripcion) VALUES (2, 'Admin');
+INSERT INTO ca_roles(orden, descripcion) VALUES (3, 'Instructor');
+INSERT INTO ca_roles(orden, descripcion) VALUES (4, 'Usuario');
 
 
 
