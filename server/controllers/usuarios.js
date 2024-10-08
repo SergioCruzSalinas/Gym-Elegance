@@ -7,6 +7,7 @@ const rules=require('../rules/usuarios');
 const Client = require('pg/lib/client');
 const { develop, plataforma, api } = require('../config/config');
 const { randomUUID, createHash } = require('crypto');
+const { query } = require('express');
 
 
 
@@ -240,7 +241,7 @@ async function updateUser( req, res) {
 
     try {  
     const { params, body }=req
-    const val=rules.updateUser({params, user})
+    const val=rules.updateUser({params, body})
 
     if(val.code !== 200){
         return res.status(val.code).send({
@@ -261,10 +262,86 @@ async function updateUser( req, res) {
             });
           }
 
+          const usuario=await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${params.id}' `});
 
+          if(usuario.code !== 200){
+            await client.query('ROLLBACK')
+            return res.status(usuario.code).send({
+              mensaje:usuario.message
+            });
+          }
+
+          if(!usuario.data){
+            await client.query('ROLLBACK')
+            return res.status(400).send({
+              mensaje:'Lo sentimos, el usuario no ha sido encontrado'
+            })
+          }
+
+          const count= await db.count({client, query:`SELECT count(*) FROM ca_usuarios usr INNER JOIN ca_accesos acs
+                                                    ON usr.id=acs.id_usuario WHERE usr.id !='${usuario.data.id}' 
+                                                    AND (usr.nombre='${body.nombreUsuario}' OR acs.correo_electronico='${body.correoElectronico}')`})
+
+          if(count.code !== 200){
+            await client.query('ROLLBACK')
+            return res.status(count.code).send({
+              mensaje:'Ocurrio un problema al validar los nuevos datos personales del usuario'
+            });
+          } 
+
+          if(count.data > 0){
+            await client.query('ROLLBACJ');
+            return res.status(400).send({
+              mensaje:'El nombre o el correo electronico ya se encuentran registrados'
+            });
+
+          }
+
+          const updateUser= await db.update({
+            client,
+            update:`UPDATE ca_usuarios SET nombre=$1, telefono=$2 WHERE id=$3`,
+            values:[body.nombreUsuario, body.telefono, params.id]
+          })
+
+          if(updateUser.code !== 200){
+            await client.query('ROLLBACK');
+            return res.status(updateUser.code).send({
+              mensaje:'Ocurrio un error al actualizar los datos personal del usuario'
+            });
+          }
+
+          if(!updateUser.data || updateUser.data !== 1){
+            await client.query('ROLLBACK');
+            return res.status('500').send({
+              mensaje:'No fue posible modificar los datos personales del usuario'
+            });
+          }
+
+          const updateEmailUser= await db.update({
+            client,
+            update:'UPDATE ca_accesos SET correo_electronico=$1 WHERE id_usuario=$2',
+            values:[body.correoElectronico, params.id]
+          });
+          
+          if(updateEmailUser.code !== 200){
+            await client.query('ROLLBACK')
+            return res.status(updateEmailUser.code).send({
+              mensaje:'Ocurrio un error al actualizar los datos'
+            })
+          }
+
+          
+          if(!updateEmailUser.data || updateEmailUser.data !== 1){
+            await client.query('ROLLBACK');
+            return res.status('500').send({
+              mensaje:'No fue posible modificar los datos personales del usuario'
+            });
+          }
+
+          await client.query('COMMIT');
         return res.status(200).send({
-            mensaje:"usuarios encontrados",
-            data:usuarios.data
+            mensaje:"Se actualizo tu informacion de manera correcta",
+            data:updateUser.data
         })
     }catch (error) {
         console.log(error);
@@ -287,14 +364,15 @@ async function updateUser( req, res) {
     
 };
 
-//eliminar un usuario
+//eliminar un usuario /pendiente por la posible eliminacion de los datos
+// se me hace mas conveniente quitar la funcion o agregar una columa de status a la tablas 
 
-async function deleteUser( req, user ) {
+async function deleteUser( req, res ) {
     let client=null;
 
     try {
         const { params }= req;
-        const val= rules.deleteUser(req);
+        const val= rules.deleteUser(params);
         
         if(val.code !==200){
             return res.status(val.code).send({
@@ -316,17 +394,37 @@ async function deleteUser( req, user ) {
             });
           }
 
-        const usuarios=await db.findAll({client, query:'SELECT * FROM ca_usuarios'})
+        const usuario=await db.findOne({client, query:`SELECT * FROM WHERE id='${params.id}'`})
 
-        if(usuarios.code !==200){
-            return res.status(usuarios.code).send({
-                mensaje:"Ocurrio un error al mostrar los usuarios"
+        if(usuario.code !==200){
+          await client.query('ROLLBACK')
+          return res.status(usuario.code).send({
+            mensaje:'Lo sentimos, ocurrio un error al validar los datos del usuario'
+          })
+        }
+
+        if(!usuario.data){
+           await client.query('ROLLBACK')
+            return res.status(400).send({
+                mensaje:"El usuario no se encuntra registrado"
             });
         }
 
+        const eliminarUsuario=await db.destroy({client, 
+                                               destroy:'DELETE FROM ca_usuarios WHERE id=$1;', 
+                                               values:[params.id]});
+        
+        if(eliminarUsuario.code !== 200){
+          await client.query('ROLLBACK');
+          return res.status(eliminarUsuario.code).send({
+            mensaje:'Ocurrio un error al eliminar el usuario'
+          })
+
+        }
+
         return res.status(200).send({
-            mensaje:"usuarios encontrados",
-            data:usuarios.data
+            mensaje:"El usuario ha sido eliminado",
+
         })
     }catch (error) {
         console.log(error);
