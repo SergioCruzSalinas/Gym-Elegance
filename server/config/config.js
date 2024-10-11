@@ -25,5 +25,16 @@ module.exports={
         errorSinAutorizacion: 'Esta cuenta no tiene acceso a este recurso',
         errorUsuarioBloqueado: 'Por motivos de seguridad su cuenta ha sido bloqueada, intente más tarde',
         errorSesionExpirada: 'Lo sentimos, su sesión ha expirado, ingrese sus credenciales de acceso',
+    },
+    regex:{
+        fecha:{
+            pattern:/^\d{4}-\d{2}-\d{2}$/
+        },
+        hora:{
+            pattern:/^([01]\d|2[0-3]):([0-5]\d)$/
+        },
+        clave:{
+            pattern:/^gym-\d+$/
+        }
     }
 }

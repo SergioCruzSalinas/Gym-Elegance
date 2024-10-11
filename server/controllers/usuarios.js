@@ -30,7 +30,7 @@ async function getUsers( req, res ) {
 
         if(usuarios.code !==200){
             return res.status(usuarios.code).send({
-                mensaje:"Ocuarrio un error al mostrar los usuarios"
+                mensaje:"Ocurrio un error al mostrar los usuarios"
             });
         }
 

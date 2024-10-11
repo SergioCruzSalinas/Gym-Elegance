@@ -7,7 +7,7 @@ const controllersMembresia=require('../controllers/membresias');
 
 module.exports=(app)=>{
     app.get(`${api.baseEndpoint}/membresias`, controllersMembresia.getMemberships);
-    app.get(`${api.baseEndpoint}/membresias/crear-membresia`, controllersMembresia.createMemberships);
-    app.get(`${api.baseEndpoint}/membresias/editar/:editar`, controllersMembresia.updateMemberships);
-    app.get(`${api.baseEndpoint}/membresias/eliminar/:id`, controllersMembresia.deleteMemberships);
+    app.post(`${api.baseEndpoint}/membresias/crear-membresia`, controllersMembresia.createMembership);
+    app.patch(`${api.baseEndpoint}/membresias/editar/:id`, controllersMembresia.updateMembership);
+    app.delete(`${api.baseEndpoint}/membresias/cambiar-estatus/:id`, controllersMembresia.changeStatusMemberships);
 }

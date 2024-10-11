@@ -1,16 +1,16 @@
 'use strict'
 
-const pc = require('picocolors');
+const pc=require('picocolors');
 const { api } = require('../config/config');
 
-const controllersAgendaActividades=require('../controllers/agendaActividades');
+const controllersUser=require('../controllers/usuarios')
+
 
 module.exports=(app)=>{
-    app.get(`${api.baseEndpoint}/agenda-actividades`, controllersAgendaActividades.getAgenda);
-    app.get(`${api.baseEndpoint}/reservar-cita`, controllersAgendaActividades.createReserveAgenda);
-    app.get(`${api.baseEndpoint}/cita/editar/:id`, controllersAgendaActividades.updateReserveAgenda);
-    app.get(`${api.baseEndpoint}/cita/asitencia/:id`, controllersAgendaActividades.attendanceAgenda)
-    app.get(`${api.baseEndpoint}/reservar-cita/estatus/:id`, controllersAgendaActividades.statusReserveAgenda);
+    app.get(`${api.baseEndpoint}/usuarios`, controllersUser.getUsers);
+    app.get(`${api.baseEndpoint}/usuarios/:id`, controllersUser.getUser);
+    app.post(`${api.baseEndpoint}/usuarios/crear-usuario`, controllersUser.createUser);
+    app.patch(`${api.baseEndpoint}/usuarios/editar/:id`, controllersUser.updateUser);
+    app.delete(`${api.baseEndpoint}/usuarios/eliminar/:id`, controllersUser.deleteUser);
 
-
-}
+};

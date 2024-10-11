@@ -38,12 +38,15 @@ CREATE TABLE ca_accesos (
 CREATE TABLE ca_membresias (
     id INT PRIMARY KEY NOT NULL,
     tipo VARCHAR(255) NOT NULL,
+    dias_duracion INT NOT NULL,
+    mes_duracion INT NOT NULL,
     descripcion TEXT NOT NULL,
     precio DOUBLE PRECISION NOT NULL
+    
 );
 
 CREATE TABLE rel_inscripciones (
-    id INT PRIMARY KEY NOT NULL,
+    id VARCHAR PRIMARY KEY NOT NULL,
     id_usuario UUID NOT NULL,
     id_membresia INT NOT NULL,
     estatus BOOLEAN NOT NULL,
@@ -66,17 +69,24 @@ CREATE TABLE ca_actividades (
     descripcion TEXT NOT NULL,
     estatus BOOLEAN NOT NULL,
     cupo INT NOT NULL,
-    fecha_inicio TIMESTAMP,
-    fecha_fin TIMESTAMP
+    fecha DATE NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    id_instructor UUID NOT NULL,
+
+    CONSTRAINT ca_actividades_id_instructor_fkey FOREIGN KEY (id_instructor)
+        REFERENCES ca_usuarios (id)
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+    
 );
 
 CREATE TABLE ca_agenda_actividades (
     folio VARCHAR(255) PRIMARY KEY NOT NULL,
-    id_inscripcion INT NOT NULL,
+    id_inscripcion VARCHAR NOT NULL,
     id_actividad INT NOT NULL,
     asistencia BOOLEAN NOT NULL,
     estatus VARCHAR(255) NOT NULL,  
-    nombre_instructor VARCHAR(255) NOT NULL,
 
     CONSTRAINT ca_actividades_id_actividad_fkey FOREIGN KEY (id_actividad)
     REFERENCES ca_actividades (id)
