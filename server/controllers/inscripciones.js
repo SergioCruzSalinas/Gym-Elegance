@@ -7,6 +7,7 @@ const rules= require('../rules/inscripciones')
 const Client = require('pg/lib/client');
 const { develop, plataforma, api, regex } = require('../config/config');
 const { query } = require('express');
+const { database } = require('pg/lib/defaults');
 
 //Notas: falta hacer la paginacion y cambiar el tipo de dato de la fecha para que solo muestre la fecha en la base de datos
 
@@ -64,6 +65,65 @@ async function getInscripciones( req, res ) {
 
 };
 
+async function getInscripcion( req, res ) {
+  //hace falta paginacion y trasacciones en la demas acciones db
+  let client=null;
+
+  try {
+    const { params }= req;
+    const val=rules.getInscripcion({ params })
+    
+    if(val.code !==200){
+        return res.status(val.code).send({
+            mensaje:val.message
+        })
+    };
+
+      client=new Client(develop);
+      try {
+          await client.connect();
+          console.log(pc.blue("Connected to PostgreSQL database"));
+      } catch (error) {
+          console.log(error);
+      }
+
+      const inscripcion=await db.findAll({client, query:`SELECT * FROM rel_inscripciones WHERE id='${params.id}'`})
+
+      if( inscripcion.code !==200){
+          return res.status(500).send({
+              mensaje:"Ocurrio un error al mostrar la inscripcion"
+          });
+      }
+
+      if(!inscripcion.data){
+        return res.status(400).send({
+          mensaje:'No se pudo encontrar la inscripcion'
+        });
+      }
+
+      return res.status(200).send({
+          mensaje:"inscripcion: ",
+          data:inscripcion.data
+      })
+  }catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        mensaje: api.errorGeneral,
+      });
+    } finally {
+      // close the connection when done
+      if (client) {
+        try {
+          await client.end();
+          console.log(pc.blue('Connection to PostgreSQL closed'));
+        } catch (err) {
+          console.log(err);
+          console.log(pc.red('Error closing connection'));
+        }
+      }
+    }
+
+};
 
 //crear un usuario (acabado)
 
@@ -198,7 +258,7 @@ async function updateInscripcion( req, res) {
 
     try {  
     const { params, body }=req
-    const val=rules.updateActivity({params, body})
+    const val=rules.updateInscripcion({params, body})
 
     if(val.code !== 200){
         return res.status(val.code).send({
@@ -215,76 +275,100 @@ async function updateInscripcion( req, res) {
             console.log(err);
             console.error(pc.red('Error: connecting to PostgreSQL database'));
             return res.status(500).send({
-              mensaje: `Lo sentimos, no fue posible actualizar los datos de la actividad`,
+              mensaje: `Lo sentimos, no fue posible actualizar los datos de la inscripcion`,
             });
           }
 
-          const actividad=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE id=${params.id} `});
+          const inscripcion=await db.findOne({client, query:`SELECT * FROM rel_inscripciones WHERE id='${params.id}' `});
 
-          if(actividad.code !== 200){
+          if(inscripcion.code !== 200){
             await client.query('ROLLBACK')
-            return res.status(actividad.code).send({
-              mensaje:actividad.message
+            return res.status(inscripcion.code).send({
+              mensaje: 'Ocurrio un error al validar la informacion'
             });
           }
 
-          if(!actividad.data){
+          if(!inscripcion.data){
             await client.query('ROLLBACK')
             return res.status(400).send({
-              mensaje:'Lo sentimos, La actividad no ha sido encontrada'
+              mensaje:'Lo sentimos, La inscripcion no ha sido encontrada'
             })
           }
 
-          if(body.fecha !== actividad.data.fecha && body.horaInicio !==actividad.data.hora_inicio){
+          const usuario = await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${body.idUsuario}' `})
 
-            const actividadesProgramadas=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE fecha='${body.fecha}' AND hora_inicio='${body.horaInicio}'`})
+          if( usuario.code !== 200 ){
+            await client.query('ROLLBACK');
+            return res.status(500).send({
+              mensaje:'Ocurrio un error al validar los datos'
+            })
+          }
 
-            if(actividadesProgramadas.code !== 200){
-                await client.query('ROLLBACK');
-                return res.status(actividadesProgramadas.code).send({
-                    mensaje:'Ocurrio un error al validar los datos'
-                });
-            }
-    
-            if(actividadesProgramadas.data){
-                await client.query('ROLLBACK');
-                return res.status(400).send({
-                    mensaje:'La fecha ya esta registrada para otra actividad'
-                });
+          if( !usuario.data){
+            await client.query('ROLLBACK');
+            return res.status(400).send({
+              mensaje:'El usuario no se encuentra registrado'
+            })
+          }
+
+          const fechaActual = new Date();
+          const fechaInicioDB = inscripcion.data.fecha_inicio.toISOString().split('T')[0]; // Convierte a 'YYYY-MM-DD'
+          const fecha = fechaActual.toISOString().split('T')[0]; // Convierte a 'YYYY-MM-DD'
+
+          console.log('Fecha actual:', fecha);
+          console.log('Fecha en la base de datos:', fechaInicioDB);
+          console.log('Fecha de inicio a editar:', body.fechaInicio);
+          
+          if (body.fechaInicio !== fechaInicioDB) {
+            if ( fecha > fechaInicioDB) {
+              await client.query('ROLLBACK');
+              return res.status(400).send({
+                mensaje: 'No se puede cambiar la fecha de inicio días después de que se realizó la inscripción'
+              });
             }
           }
 
-          if (body.horaInicio >= body.horaFin) {
+          const membresiaActiva = await db.findOne({ client, query:` SELECT * FROM ca_membresias WHERE id='${body.idMembresia}' AND estatus= true `})
+
+          if( membresiaActiva.code !== 200 ){
+            await client.query('ROLLBACK')
+            return res.status(500).send({
+              mensaje:'Ocurrio un error al validar los datos'
+            })
+          }
+
+          if( !membresiaActiva.data ){
             await client.query('ROLLBACK');
             return res.status(400).send({
-                mensaje:"La hora de inicio no puede ser mayor o igual a la hora que finaliza la actividad"
-            })  
-         }
-          
+              mensaje:'La membresia no se encuentra registrada o esta inactiva'
+            })
+          }
 
-          const  updateActivity= await db.update({
+          const finalInscripcion= await calcularFechaFinalizacion(body.fechaInicio, membresiaActiva.data.mes_duracion, membresiaActiva.data.dias_duracion)
+
+          const  updateInscripcion= await db.update({
             client,
-            update:`UPDATE ca_actividades SET descripcion=$1, cupo=$2, hora_inicio=$3, hora_fin=$4, fecha=$5 WHERE id=$6` ,
-            values:[body.descripcion, body.cupo, body.horaInicio, body.horaFin, body.fecha, params.id]
+            update:`UPDATE rel_inscripciones SET id_usuario=$1, id_membresia=$2, fecha_inicio=$3, fecha_expiracion=$4  WHERE id=$5` ,
+            values:[body.idUsuario, body.idMembresia, body.fechaInicio, finalInscripcion, params.id]
           })
 
-          if(updateActivity.code !== 200){
+          if(updateInscripcion.code !== 200){
             await client.query('ROLLBACK');
-            return res.status(updateActivity.code).send({
-              mensaje:'Ocurrio un error al actualizar los datos de la actividad'
+            return res.status(updateInscripcion.code).send({
+              mensaje:'Ocurrio un error al actualizar los datos de la inscripcion'
             });
           }
 
-          if(!updateActivity.data || updateActivity.data !== 1){
+          if(!updateInscripcion.data || updateInscripcion.data !== 1){
             await client.query('ROLLBACK');
             return res.status('500').send({
-              mensaje:'No fue posible modificar los datos de la actividad'
+              mensaje:'No fue posible modificar los datos de la inscripcion'
             });
           }
 
         await client.query('COMMIT');
         return res.status(200).send({
-            mensaje:`Se actualizo la informacion de la actividad (${actividad.data.descripcion})`,
+            mensaje:`Se actualizo la informacion de la inscripcion (${params.id})`,
         })
     }catch (error) {
         console.log(error);
@@ -313,7 +397,7 @@ async function changeStatusInscripcion( req, res ) {
 
     try {
         const { params }= req;
-        const val= rules.changeStatusActivity({params});
+        const val= rules.changeStatusInscripcion({params});
         
         if(val.code !==200){
             return res.status(val.code).send({
@@ -335,41 +419,53 @@ async function changeStatusInscripcion( req, res ) {
             });
           }
 
-        const actividad=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE  id=${params.id}`})
+        const inscripcion=await db.findOne({client, query:`SELECT * FROM rel_inscripciones WHERE  id='${params.id}'`})
 
-        if(actividad.code !==200){
+        if(inscripcion.code !==200){
           await client.query('ROLLBACK')
           return res.status(actividad.code).send({
-            mensaje:'Lo sentimos, ocurrio un error al cambiar el estatus de la actividad'
+            mensaje:'Lo sentimos, ocurrio un error al cambiar el estatus de la inscripcion'
           })
         }
 
-        if(!actividad.data){
+        if(!inscripcion.data){
            await client.query('ROLLBACK')
             return res.status(400).send({
-                mensaje:"La actividad no se encuentra registrada"
+                mensaje:"La inscripcion no se encuentra registrada"
             });
         }
 
-        const text=actividad.data.estatus ? 'deshabilitado' : 'habilitado';
+        //verficra que las fecha actual sea mayor que la fecha de inicio de la inscripcion
 
-        const estatus=!actividad.data.estatus;
+        const fechaActual= new Date;
+        const fecha=fechaActual.toISOString().split('T')[0];
+        const fechaExpiracion= inscripcion.data.fecha_expiracion.toISOString().split('T')[0];
 
 
-        const changeStatusActivity= await db.update({
+        console.log(fecha);
+        console.log(fechaExpiracion)
+
+        if( fechaExpiracion > fecha){
+          await client.query('ROLLBACK');
+          return res.status(400).send({
+            mensaje:'El estatus no puede ser modificado, ya que la fecha de expiración de la inscripción aún no ha sido alcanzada'
+          })
+        }
+
+        const changeStatusInscripcion= await db.update({
           client,
-          update:`UPDATE ca_actividades SET estatus=$1 WHERE id=$2`,
-          values:[estatus,params.id]
+          update:`UPDATE rel_inscripciones SET estatus=$1 WHERE id=$2`,
+          values:[false,params.id]
         })
 
-        if(changeStatusActivity.code !== 200){
+        if(changeStatusInscripcion.code !== 200){
           await client.query('ROLLBACK');
-          return res.status(changeStatusActivity.code).send({
+          return res.status(500).send({
             mensaje:'Ocurrio un error al cambiar el estatus de la actividad'
           });
         }
 
-        if(!changeStatusActivity.data || changeStatusActivity.data !== 1 ){
+        if(!changeStatusInscripcion.data || changeStatusInscripcion.data !== 1 ){
           await client.query('ROLLBACK');
           return res.status(500).send({
             mensaje:'No fue posible cambiar el estatus de la actividad'
@@ -378,7 +474,7 @@ async function changeStatusInscripcion( req, res ) {
 
         await client.query('COMMIT')
         return res.status(200).send({
-            mensaje:`Se ha ${text} de la actvidad ${actividad.data.descripcion}`,
+            mensaje:`Se ha finalizado la inscripcion ${inscripcion.data.id}`,
 
         })
     }catch (error) {
@@ -404,6 +500,7 @@ async function changeStatusInscripcion( req, res ) {
 
 module.exports={
     getInscripciones,
+    getInscripcion,
     createInscripcion,
     updateInscripcion,
     changeStatusInscripcion,

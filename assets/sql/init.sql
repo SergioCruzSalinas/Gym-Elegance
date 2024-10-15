@@ -12,6 +12,7 @@ CREATE TABLE ca_usuarios(
     id_rol INT NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     telefono VARCHAR(25) NOT NULL,
+    estatus BOOLEAN DEFAULT true NOT NULL,
 
     CONSTRAINT ca_usuarios_id_rol_fkey FOREIGN KEY (id_rol)
         REFERENCES ca_roles (id)
@@ -42,6 +43,7 @@ CREATE TABLE ca_membresias (
     mes_duracion INT NOT NULL,
     descripcion TEXT NOT NULL,
     precio DOUBLE PRECISION NOT NULL
+    estatus BOOLEAN DEFAULT true NOT NULL;
     
 );
 

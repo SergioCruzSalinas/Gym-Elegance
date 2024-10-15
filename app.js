@@ -18,6 +18,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: false }));
 // Disable header
 app.disable('x-powered-by');
 
+require('./server/routes/admin')(app)
 require('./server/routes/usuarios')(app)
 require('./server/routes/actividades')(app)
 require('./server/routes/membresias')(app)

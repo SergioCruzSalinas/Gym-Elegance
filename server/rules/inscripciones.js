@@ -2,6 +2,29 @@ const check = require("check-types");
 const { isUUID } = require("validator");
 const { regex } = require("../config/config");
 
+function getInscripcion({params}){
+    const regexClave= new RegExp(regex.clave.pattern)
+    const result={
+        code:200,
+        message:''
+    };
+
+    if(!params.id || !check.string(params.id)){
+        result.code=400;
+        result.message='Se requiere el id de la inscripcion para continuar'
+        return result;
+    }
+
+    if( !regexClave.test(params.id)){
+        result.code=400;
+        result.message='El formato del id es incorrecto';
+        return result;
+    }
+
+    return result;
+}
+
+
 function createInscripcion({body}){
     const regexFecha=new RegExp(regex.fecha.pattern);
 
@@ -45,15 +68,25 @@ function createInscripcion({body}){
 }
 
 function updateInscripcion({params, body}){
+
+    const regexClave = new RegExp(regex.clave.pattern)
+    const regexFecha= new RegExp(regex.fecha.pattern)
+
     const result={
         code:200,
         message:'',
     }
 
-    if(!params.id || !check.string(params.id) || !isUUID(params.id)){
+    if(!params.id || !check.string(params.id)){
         result.code=400;
-        result.message='Se requiere el id de la inscripcion para continuar'
-        return result
+        result.message='Se requiere el id de la inscripcion para continuar';
+        return result;
+    }
+
+    if( !regexClave.test(params.id)){
+        result.code=400;
+        result.message='Se requiere el formato del id';
+        return result;
     }
 
     if(!body.idUsuario || !check.string(body.idUsuario)){
@@ -68,13 +101,19 @@ function updateInscripcion({params, body}){
         return result;
     }
 
-    if(!body.idMembesia){
+    if(!body.idMembresia){
         result.code=400;
         result.message='Se requiere el id de la membresia para continuar';
         return result;
     }
 
-    if(!body.fechaInicio || check.string(body.fechaInicio)){
+    if( !Number.isInteger(body.idMembresia)){
+        result.code=400;
+        result.message='El id de la membresia se requiere como un numero entero';
+        return result;
+    }
+
+    if(!body.fechaInicio || !check.string(body.fechaInicio)){
         result.code=400;
         result.message='Se requiere la fecha de inicio para continuar';
         return result;
@@ -90,7 +129,8 @@ function updateInscripcion({params, body}){
 
 }
 
-function changeStatusScripcion({params}){
+function changeStatusInscripcion({params}){
+    const regexClave= new RegExp(regex.clave.pattern)
     const result={
         code:200,
         message:''
@@ -102,7 +142,7 @@ function changeStatusScripcion({params}){
         return result;
     }
 
-    if(!isUUID(params.id)){
+    if( !regexClave.test(params.id)){
         result.code=400;
         result.message='El formato del id es incorrecto';
         return result;
@@ -113,8 +153,9 @@ function changeStatusScripcion({params}){
 }
 
 module.exports={
+    getInscripcion,
     createInscripcion,
     updateInscripcion,
-    changeStatusScripcion,
+    changeStatusInscripcion,
     
 }

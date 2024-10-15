@@ -7,13 +7,15 @@ const rules=require('../rules/usuarios');
 const Client = require('pg/lib/client');
 const { develop, plataforma, api } = require('../config/config');
 const { randomUUID, createHash } = require('crypto');
-const { query } = require('express');
+const { includes } = require('check-types');
+
+
 
 
 
 //ver los usuarios
 
-async function getUsers( req, res ) {
+async function getAdmins( req, res ) {
     //hace falta paginacion y trasacciones en la demas acciones db
     let client=null;
 
@@ -26,16 +28,16 @@ async function getUsers( req, res ) {
             console.log(error);
         }
 
-        const usuarios=await db.findAll({client, query:'SELECT * FROM ca_usuarios'})
+        const usuarios=await db.findAll({client, query:'SELECT * FROM ca_usuarios WHERE id_rol=2 OR id_rol=1'})
 
         if(usuarios.code !==200){
             return res.status(usuarios.code).send({
-                mensaje:"Ocurrio un error al mostrar los usuarios"
+                mensaje:"Ocurrio un error al mostrar los administradores"
             });
         }
 
         return res.status(200).send({
-            mensaje:"usuarios encontrados",
+            mensaje:"administradores",
             data:usuarios.data
         })
     }catch (error) {
@@ -59,7 +61,7 @@ async function getUsers( req, res ) {
 };
 
 
-async function getUser( req, res ) {
+async function getAdmin( req, res ) {
     let client=null;
 
     try {
@@ -81,23 +83,29 @@ async function getUser( req, res ) {
             console.log(error);
         }
 
-        const usuarios=await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${params.id}'`})
+        const admin=await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${params.id}'`})
 
-        if(usuarios.code !==200){
-            return res.status(usuarios.code).send({
-                mensaje:"Ocuarrio un error al mostrar los datos"
+        if(admin.code !==200){
+            return res.status(500).send({
+                mensaje:"Ocurrio un error al mostrar los datos"
             });
         }
 
-        if(!usuarios.data){
+        if(!admin.data){
             return res.status(400).send({
                 mensaje:"El usuario no se encuentra registrado"
             });
         }
 
+        if (![1, 2].includes(admin.data.id_rol)) {
+          return res.status(400).send({
+            mensaje: 'El usuario no se encuentra registrado¨**********',
+          });
+        }
+        
         return res.status(200).send({
-            mensaje:"usuario encontrado",
-            data:usuarios.data
+            mensaje:"admin encontrado",
+            data:admin.data
         })
     }catch (error) {
         console.log(error);
@@ -123,7 +131,7 @@ async function getUser( req, res ) {
 
 //crear un usuario (acabado)
 
-async function createUser( req, res ) {
+async function createAdmin( req, res ) {
     let client=null;
 
     try {
@@ -149,16 +157,17 @@ async function createUser( req, res ) {
             });
           }
 
-        const usuario=await db.findOne({client, query:`SELECT * FROM ca_accesos WHERE correo_electronico='${body.correoElectronico}' OR nombre='${body.nombreUsuario}'`})
+        const admin=await db.findOne({client, query:`SELECT * FROM ca_usuarios usr INNER JOIN ca_accesos acs
+                                                    ON usr.id=acs.id_usuario WHERE (usr.nombre='${body.nombreUsuario}' OR acs.correo_electronico='${body.correoElectronico}')`})
 
-        if(usuario.code !== 200){
+        if(admin.code !== 200){
             await client.query('ROLLBACK');
-            return res.status(usuario.code).send({
+            return res.status(500).send({
                 mensaje:'Ha ocurrido un error'
             });
         }
 
-        if(usuario.data){
+        if(admin.data){
             await client.query('ROLLBACK');
             return res.status(400).send({
                 mensaje:'El correo electronico o el nombre ya se encuentra registrado'
@@ -168,7 +177,7 @@ async function createUser( req, res ) {
         const registrarUsuario=await db.insert({
             client, 
             insert:'INSERT INTO ca_usuarios(id, id_rol, nombre, telefono) VALUES($1, $2, $3, $4)',
-            values:[randomUUID(), plataforma.roles.usuario ,body.nombreUsuario,body.telefono]
+            values:[randomUUID(), plataforma.roles.admin ,body.nombreUsuario,body.telefono]
         });
 
         if(registrarUsuario.code !==200){
@@ -236,7 +245,7 @@ async function createUser( req, res ) {
 
 //editar un usuario
 
-async function updateUser( req, res) {
+async function updateAdmin( req, res) {
     let client=null;
 
     try {  
@@ -262,24 +271,31 @@ async function updateUser( req, res) {
             });
           }
 
-          const usuario=await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${params.id}' `});
+          const admin=await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${params.id}' `});
 
-          if(usuario.code !== 200){
+          if(admin.code !== 200){
             await client.query('ROLLBACK')
-            return res.status(usuario.code).send({
-              mensaje:usuario.message
+            return res.status(500).send({
+              mensaje:'Ocurrio un error al validar los datos'
             });
           }
 
-          if(!usuario.data){
+          if(!admin.data){
             await client.query('ROLLBACK')
             return res.status(400).send({
               mensaje:'Lo sentimos, el usuario no ha sido encontrado'
             })
           }
 
+          if (![1, 2].includes(admin.data.id_rol)) {
+            return res.status(400).send({
+              mensaje: 'El usuario no se encuentra registrado',
+            });
+          }
+          
+
           const count= await db.count({client, query:`SELECT count(*) FROM ca_usuarios usr INNER JOIN ca_accesos acs
-                                                    ON usr.id=acs.id_usuario WHERE usr.id !='${usuario.data.id}' 
+                                                    ON usr.id=acs.id_usuario WHERE usr.id !='${admin.data.id}' 
                                                     AND (usr.nombre='${body.nombreUsuario}' OR acs.correo_electronico='${body.correoElectronico}')`})
 
           if(count.code !== 200){
@@ -297,33 +313,33 @@ async function updateUser( req, res) {
 
           }
 
-          const updateUser= await db.update({
+          const updateAdmin= await db.update({
             client,
             update:`UPDATE ca_usuarios SET nombre=$1, telefono=$2 WHERE id=$3`,
             values:[body.nombreUsuario, body.telefono, params.id]
           })
 
-          if(updateUser.code !== 200){
+          if(updateAdmin.code !== 200){
             await client.query('ROLLBACK');
-            return res.status(updateUser.code).send({
+            return res.status(500).send({
               mensaje:'Ocurrio un error al actualizar los datos.'
             });
           }
 
-          if(!updateUser.data || updateUser.data !== 1){
+          if(!updateAdmin.data || updateAdmin.data !== 1){
             await client.query('ROLLBACK');
             return res.status('500').send({
               mensaje:'No fue posible modificar los datos.'
             });
           }
 
-          const updateEmailUser= await db.update({
+          const updateEmailAdmin= await db.update({
             client,
             update:'UPDATE ca_accesos SET correo_electronico=$1 WHERE id_usuario=$2',
             values:[body.correoElectronico, params.id]
           });
           
-          if(updateEmailUser.code !== 200){
+          if(updateEmailAdmin.code !== 200){
             await client.query('ROLLBACK')
             return res.status(updateEmailUser.code).send({
               mensaje:'Ocurrio un error al actualizar los datos'
@@ -331,17 +347,17 @@ async function updateUser( req, res) {
           }
 
           
-          if(!updateEmailUser.data || updateEmailUser.data !== 1){
+          if(!updateEmailAdmin.data || updateEmailAdmin.data !== 1){
             await client.query('ROLLBACK');
             return res.status('500').send({
-              mensaje:'No fue posible modificar los datos personales del usuario'
+              mensaje:'No fue posible modificar los datos'
             });
           }
 
           await client.query('COMMIT');
         return res.status(200).send({
             mensaje:"Se actualizo tu informacion de manera correcta",
-            data:updateUser.data
+            data:updateAdmin.data
         })
     }catch (error) {
         console.log(error);
@@ -367,7 +383,7 @@ async function updateUser( req, res) {
 //eliminar un usuario /pendiente por la posible eliminacion de los datos
 // se me hace mas conveniente quitar la funcion o agregar una columa de status a la tablas 
 
-async function deleteUser( req, res ) {
+async function deleteAdmin( req, res ) {
     let client=null;
 
     try {
@@ -452,9 +468,9 @@ async function deleteUser( req, res ) {
 
 
 module.exports={
-    getUsers,
-    getUser,
-    createUser,
-    updateUser,
-    deleteUser,
+    getAdmins,
+    getAdmin,
+    createAdmin,
+    updateAdmin,
+    deleteAdmin,
 }
