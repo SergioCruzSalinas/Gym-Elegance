@@ -85,7 +85,7 @@ async function getUser( req, res ) {
 
         if(usuarios.code !==200){
             return res.status(usuarios.code).send({
-                mensaje:"Ocuarrio un error al mostrar los datos"
+                mensaje:"Ocurrio un error al mostrar los datos"
             });
         }
 
