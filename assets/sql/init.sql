@@ -42,8 +42,8 @@ CREATE TABLE ca_membresias (
     dias_duracion INT NOT NULL,
     mes_duracion INT NOT NULL,
     descripcion TEXT NOT NULL,
-    precio DOUBLE PRECISION NOT NULL
-    estatus BOOLEAN DEFAULT true NOT NULL;
+    precio DOUBLE PRECISION NOT NULL,
+    estatus BOOLEAN DEFAULT true NOT NULL
     
 );
 
@@ -85,7 +85,7 @@ CREATE TABLE ca_actividades (
 
 CREATE TABLE ca_agenda_actividades (
     folio VARCHAR(255) PRIMARY KEY NOT NULL,
-    id_inscripcion VARCHAR NOT NULL,
+    id_usuario UUID NOT NULL,
     id_actividad INT NOT NULL,
     asistencia BOOLEAN NOT NULL,
     estatus VARCHAR(255) NOT NULL,  
@@ -95,8 +95,8 @@ CREATE TABLE ca_agenda_actividades (
     ON UPDATE NO ACTION
     ON DELETE NO ACTION,
 
-    CONSTRAINT rel_inscripciones_id_inscripcion_fkey FOREIGN KEY (id_inscripcion)
-    REFERENCES rel_inscripciones (id)
+    CONSTRAINT rel_inscripciones_id_usuario_fkey FOREIGN KEY (id_usuario)
+    REFERENCES ca_usuarios (id)
     ON UPDATE NO ACTION
     ON DELETE NO ACTION
 );
@@ -107,7 +107,6 @@ INSERT INTO ca_roles(orden, descripcion) VALUES (1, 'Root');
 INSERT INTO ca_roles(orden, descripcion) VALUES (2, 'Admin');
 INSERT INTO ca_roles(orden, descripcion) VALUES (3, 'Instructor');
 INSERT INTO ca_roles(orden, descripcion) VALUES (4, 'Usuario');
-
 
 
 
