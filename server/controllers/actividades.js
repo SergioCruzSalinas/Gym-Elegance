@@ -127,16 +127,13 @@ async function createActivity( req, res ) {
         }
 
     
-        if(!count.data){
-           const idActividad=1
-        }
-
-         const idActividad=count.data+1;
+        const totalActividades = count.data ? count.data : 0;
+        const idActividad = totalActividades + 1;
 
         const registrarActividad=await db.insert({
             client, 
-            insert:'INSERT INTO ca_actividades(id, descripcion, estatus, cupo, hora_inicio, hora_fin, fecha ) VALUES($1, $2, $3, $4, $5, $6, $7)',
-            values:[idActividad, body.descripcion, true, body.cupo, body.horaInicio, body.horaFin, body.fecha]
+            insert:'INSERT INTO ca_actividades(id, descripcion, estatus, cupo, id_instructor, hora_inicio, hora_fin, fecha ) VALUES($1, $2, $3, $4, $5, $6, $7, $8)',
+            values:[idActividad, body.descripcion, true, body.cupo, body.idInstructor, body.horaInicio, body.horaFin, body.fecha]
         });
 
         if(registrarActividad.code !==200){
@@ -223,7 +220,9 @@ async function updateActivity( req, res) {
             })
           }
 
-          if(body.fecha !== actividad.data.fecha && body.horaInicio !==actividad.data.hora_inicio){
+          if(body.fecha !== actividad.data.fecha.toISOString().split('T')[0] && body.horaInicio !==actividad.data.hora_inicio){
+            console.log(body.fecha)
+            console.log(actividad.data)
 
             const actividadesProgramadas=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE fecha='${body.fecha}' AND hora_inicio='${body.horaInicio}'`})
 
@@ -252,8 +251,8 @@ async function updateActivity( req, res) {
 
           const  updateActivity= await db.update({
             client,
-            update:`UPDATE ca_actividades SET descripcion=$1, cupo=$2, hora_inicio=$3, hora_fin=$4, fecha=$5 WHERE id=$6` ,
-            values:[body.descripcion, body.cupo, body.horaInicio, body.horaFin, body.fecha, params.id]
+            update:`UPDATE ca_actividades SET descripcion=$1, cupo=$2, id_instructor=$3, hora_inicio=$4, hora_fin=$5, fecha=$6 WHERE id=$7` ,
+            values:[body.descripcion, body.cupo, body.idInstructor , body.horaInicio, body.horaFin, body.fecha, params.id]
           })
 
           if(updateActivity.code !== 200){

@@ -68,19 +68,18 @@ CREATE TABLE rel_inscripciones (
 
 CREATE TABLE ca_actividades (
     id INT PRIMARY KEY NOT NULL,
+    id_instructor UUID NOT NULL,
     descripcion TEXT NOT NULL,
     estatus BOOLEAN NOT NULL,
     cupo INT NOT NULL,
-    fecha DATE NOT NULL,
-    hora_inicio TIME NOT NULL,
-    hora_fin TIME NOT NULL,
-    id_instructor UUID NOT NULL,
+    fecha DATE ,
+    hora_inicio TIME ,
+    hora_fin TIME,
 
     CONSTRAINT ca_actividades_id_instructor_fkey FOREIGN KEY (id_instructor)
-        REFERENCES ca_usuarios (id)
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-    
+    REFERENCES ca_usuarios (id)
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
 );
 
 CREATE TABLE ca_agenda_actividades (
@@ -88,8 +87,8 @@ CREATE TABLE ca_agenda_actividades (
     id_usuario UUID NOT NULL,
     id_actividad INT NOT NULL,
     asistencia BOOLEAN NOT NULL,
-    estatus VARCHAR(255) NOT NULL,  
-
+    estatus VARCHAR(255) NOT NULL,
+    
     CONSTRAINT ca_actividades_id_actividad_fkey FOREIGN KEY (id_actividad)
     REFERENCES ca_actividades (id)
     ON UPDATE NO ACTION
