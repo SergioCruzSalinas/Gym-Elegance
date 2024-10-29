@@ -83,10 +83,10 @@ CREATE TABLE ca_actividades (
 );
 
 CREATE TABLE ca_agenda_actividades (
-    folio VARCHAR(255) PRIMARY KEY NOT NULL,
+    folio UUID PRIMARY KEY NOT NULL,
     id_usuario UUID NOT NULL,
     id_actividad INT NOT NULL,
-    asistencia BOOLEAN NOT NULL,
+    asistencia VARCHAR(255) NOT NULL,
     estatus VARCHAR(255) NOT NULL,
     
     CONSTRAINT ca_actividades_id_actividad_fkey FOREIGN KEY (id_actividad)

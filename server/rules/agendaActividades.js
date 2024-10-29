@@ -3,7 +3,6 @@ const { isUUID } = require("validator");
 const { plataforma, regex } = require("../config/config");
 
 
-
 function getAgendaActivity({ params }){
 
     const result={
@@ -43,31 +42,57 @@ function createDateActivity({ body }){
         return result
     }
 
-    if(!body.fecha){
-        result.code = 400;
-        result.message= 'Se requiere la fecha de la cita'
-        return result
-    }
 
-    if(!regexFecha.test(body.fecha)){
-        result.code = 400;
-        result.message= 'El formato de la fecha debe ser YYYY-MM-DD'
-        return result
-    }
 
-    if(!body.hora  || !check.string(body.hora)){
+
+    return result;
+}
+
+function updateDateActivity({ params, body }){
+    const result={
+        code:200,
+        message: '',
+    };
+
+    if(!params.id || !check.string(params.id) || !isUUID(params.id) ){
         result.code=400;
-        result.message='Ingrese la hora en la que inicia la actividad';
+        result.message='Se requiere el id de la cita para continuar';
         return result;
     }
 
-    if(!regexHora.test(body.horaInicio)){
-        result.code=400;
-        result.message='El formato de la hora deber ser HH:MM y uso de las 24 hrs.';
+    if(!body.idUsuario || !check.string(body.idUsuario) || !isUUID(body.idUsuario)){
+        result.code = 400;
+        result.message= 'Se requiere el id del usuario'
+        return result
+    }
+
+    if(!body.idActividad){
+        result.code = 400;
+        result.message= 'Se requiere el id de la actividad'
+        return result
+    }
+
+    return result;
+
+}
+
+function updateAsistenceDate({ params, body }){
+    const result = {
+        code:200,
+        message:'',
+    };
+
+    if(!params.id || !check.string(params.id) || !isUUID(params.id)){
+        result.code = 400;
+        result.message = 'Se requiere el folio de la cita para continuar';
         return result;
     }
 
-
+    if(!body.asistencia || !check.string(body.asistencia)){
+        result.code = 400;
+        result.message = 'Se requiere el estatus de la cita';
+        return result
+    }
 
     return result;
 }
@@ -75,4 +100,6 @@ function createDateActivity({ body }){
 module.exports={
     getAgendaActivity,
     createDateActivity,
+    updateDateActivity,
+    updateAsistenceDate,
 }
