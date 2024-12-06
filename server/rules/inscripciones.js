@@ -3,7 +3,7 @@ const { isUUID } = require("validator");
 const { regex } = require("../config/config");
 
 function getInscripcion({params}){
-    const regexClave= new RegExp(regex.clave.pattern)
+
     const result={
         code:200,
         message:''
@@ -11,13 +11,7 @@ function getInscripcion({params}){
 
     if(!params.id || !check.string(params.id)){
         result.code=400;
-        result.message='Se requiere el id de la inscripcion para continuar'
-        return result;
-    }
-
-    if( !regexClave.test(params.id)){
-        result.code=400;
-        result.message='El formato del id es incorrecto';
+        result.message='Se requiere el id del usuario para ver su inscripcion'
         return result;
     }
 

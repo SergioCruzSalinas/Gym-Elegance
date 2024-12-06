@@ -5,8 +5,7 @@ const db=require('../db/index')
 
 const rules= require('../rules/membresias')
 const Client = require('pg/lib/client');
-const { develop, plataforma, api } = require('../config/config');
-const { randomUUID, createHash } = require('crypto');
+const { develop, api } = require('../config/config');
 
 
 //ver los usuarios
@@ -61,6 +60,47 @@ async function getMemberships( req, res ) {
       }
 
 };
+
+async function getMembership( req, res) {
+  let client = null;
+  try {
+    const { params } = req;
+    const val = rules.getMembership({ params });
+
+    if(val.rules !== 200) {
+      return res.status(val.code).send({
+        mensaje: val.message
+      });
+    }
+
+    client = new Client(develop);
+
+    try {
+      await client.connect();
+      console.log(pc.blue("Connected to PostgreSQL database"));
+    } catch (error) {
+      console.log(err);
+      console.error(pc.red('Error: connecting to PostgreSQL database'));
+      return res.status(500).send({
+        mensaje: `Lo sentimos, no fue posible mostrar la membresia`,
+      });
+    }
+
+    const membership = await db.findOne({ client, query:`SELECT * FROM ca_membresias WHERE id = '${params.id}'; `})
+
+    if( membership.code !== 200){
+      return res.status(membership.code).send({
+        message: 'Ocurrio un error al obtener la membresia'
+      });
+    }
+    res.status(200).send(
+      membership.data
+    )
+  } catch (error) {
+    console.log(error);
+  }
+  
+}
 
 
 //crear un usuario (acabado)
@@ -357,6 +397,7 @@ async function changeStatusMemberships(req, res) {
 
 module.exports={
     getMemberships,
+    getMembership,
     createMembership,
     updateMembership,
     changeStatusMemberships,

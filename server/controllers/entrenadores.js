@@ -26,7 +26,9 @@ async function getCoachs( req, res ) {
             console.log(error);
         }
 
-        const entrenadores=await db.findAll({client, query:`SELECT * FROM ca_usuarios WHERE id_rol= 3`})
+        const entrenadores=await db.findAll({client, query:`SELECT u.id, u.id_rol , u.nombre, u.telefono, u.estatus, a.correo_electronico 
+                                                            FROM ca_usuarios u INNER JOIN ca_accesos a 
+                                                            ON u.id=a.id_usuario WHERE id_rol=3`})
 
         if(entrenadores.code !==200){
             return res.status(entrenadores.code).send({

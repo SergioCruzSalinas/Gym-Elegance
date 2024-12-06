@@ -8,6 +8,7 @@ const Client = require('pg/lib/client');
 const { develop, plataforma, api } = require('../config/config');
 const { randomUUID, createHash } = require('crypto');
 const { query } = require('express');
+const { send } = require('process');
 
 
 
@@ -149,7 +150,23 @@ async function createUser( req, res ) {
             });
           }
 
-        const usuario=await db.findOne({client, query:`SELECT * FROM ca_accesos WHERE correo_electronico='${body.correoElectronico}' OR nombre='${body.nombreUsuario}'`})
+        const usuario=await db.findOne({client, query:`SELECT * FROM ca_accesos WHERE correo_electronico='${body.correoElectronico}'`})
+
+        const nameUser = await db.findOne({ client, query: `SELECT * FROM ca_usuarios WHERE nombre='${body.nombreUsuario}'`})
+
+        if( nameUser.code !== 200) {
+          await client.query('ROLLBACK');
+          return res.status(nameUser.code)-send({
+            mensaje: 'Ha ocurrido un error'
+          });
+        }
+
+        if(nameUser.data){
+          await client.query('ROLLBACK');
+          return res.status(400).send({
+            mensaje: 'El correo electronico o el nombre ya se encuentra registrado'
+          });
+        }
 
         if(usuario.code !== 200){
             await client.query('ROLLBACK');

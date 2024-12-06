@@ -87,7 +87,7 @@ async function getInscripcion( req, res ) {
           console.log(error);
       }
 
-      const inscripcion=await db.findAll({client, query:`SELECT * FROM rel_inscripciones WHERE id='${params.id}'`})
+      const inscripcion=await db.findOne({client, query:`SELECT * FROM rel_inscripciones WHERE id_usuario = '${params.id}' AND estatus = true `})
 
       if( inscripcion.code !==200){
           return res.status(500).send({
@@ -101,10 +101,8 @@ async function getInscripcion( req, res ) {
         });
       }
 
-      return res.status(200).send({
-          mensaje:"inscripcion: ",
-          data:inscripcion.data
-      })
+      return res.status(200).send(inscripcion.data)
+      
   }catch (error) {
       console.log(error);
       return res.status(500).send({

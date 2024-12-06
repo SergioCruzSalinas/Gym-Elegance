@@ -1,6 +1,21 @@
 'use strict';
 const check = require('check-types');
 
+function getMembership({ params }) {
+    const result={
+        code:200,
+        message:''
+    };
+
+    if (!params.id && !check.string(params.id)) {
+        result.code = 400;
+        result.message = 'Se requiere el id del usuario o la clave del usuario'
+        return result;
+    }
+
+    return result;
+}
+
 
 function createMembership({body}){
     const result={
@@ -139,6 +154,7 @@ function changeStatusMemberships({params}){
 }
 
 module.exports={
+    getMembership,
     createMembership,
     updateMembership,
     changeStatusMemberships,

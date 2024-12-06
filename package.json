@@ -13,8 +13,11 @@
   "license": "ISC",
   "dependencies": {
     "check-types": "^11.2.3",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "moment-timezone": "^0.5.46",
     "morgan": "^1.10.0",
     "pg": "^8.13.0",
     "picocolors": "^1.1.0",

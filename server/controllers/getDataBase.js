@@ -117,7 +117,7 @@ async function insertDataBase(req, res) {
         });          
         }
 
-             // Agregar admin
+             // Agregar usuario
              const idUser = randomUUID();
              const createUser = await db.insert({
                  client,

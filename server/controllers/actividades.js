@@ -41,7 +41,6 @@ async function getActivities( req, res ) {
         }
 
         return res.status(200).send({
-            mensaje:"Actividades: ",
             data:actividades.data
         })
     }catch (error) {
