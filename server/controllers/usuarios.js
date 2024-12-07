@@ -82,7 +82,11 @@ async function getUser( req, res ) {
             console.log(error);
         }
 
-        const usuarios=await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${params.id}'`})
+        const usuarios=await db.findOne({client, query:`SELECT u.id, u.id_rol, u.nombre, u.telefono, u.estatus, a.correo_electronico
+                                                        FROM ca_usuarios u 
+                                                        INNER JOIN ca_accesos a
+                                                        ON u.id = a.id_usuario 
+                                                        WHERE u.id = '${params.id}' `})
 
         if(usuarios.code !==200){
             return res.status(usuarios.code).send({
