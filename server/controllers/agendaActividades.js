@@ -84,7 +84,11 @@ async function getAgendaActivity( req, res ) {
             });
           }
 
-          const agendaActivities = await db.findAll({ client, query:`SELECT * FROM ca_agenda_actividades WHERE id_usuario = '${params.id}' `});
+          const agendaActivities = await db.findAll({ client, query:`SELECT aa.folio, aa.asistencia, ac.descripcion, ac.fecha, ac.hora_inicio, ac.hora_fin
+                                                                      FROM ca_agenda_actividades aa
+                                                                      INNER JOIN ca_actividades ac
+                                                                      ON aa.id_actividad = ac.id
+                                                                      WHERE aa.id_usuario = '${params.id}' `});
 
           if( agendaActivities.code !== 200 ){
             return res.status(agendaActivities.code).send({
