@@ -60,7 +60,7 @@ async function getUsers( req, res ) {
 };
 
 
-async function getUser( req, res ) {
+async function getUser( req, res ) {      
     let client=null;
 
     try {

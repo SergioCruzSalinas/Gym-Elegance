@@ -142,7 +142,7 @@ async function createAgendaActivities( req, res ) {
         try {
             await client.connect();
             console.log(pc.blue("Connected to PostgreSQL database"));
-            await client.query('BEGIN');
+            await client.query("BEGIN");
             console.log(pc.yellow('Transaction started'));
         }  catch (err) {
             console.log(err);
@@ -155,31 +155,31 @@ async function createAgendaActivities( req, res ) {
           const user = await db.findOne({ client, query:`SELECT * FROM ca_usuarios WHERE id = '${body.idUsuario}' `})
 
           if(user.code !== 200){
-            await client.query('ROLLBACK');
+            await client.query("ROLLBACK");
             return res.status(client.code).send({
               mensaje: 'Ocurrio un errror al validar la informacion'
             });
           }
 
           if(!user.data){
-            await client.query('ROLLBACK');
+            await client.query("ROLLBACK");
             return res.status(400).send({
               mensaje:'El usuario no se encuentra registrado'
             });
           }
           // Verificar que el usuario cuenten con un plan
 
-          const membershipUser = await db.findOne({ client, query:`SELECT * FROM ca_inscripciones WHERE id_usuario='${body.idUsuario}' estatus = true`})
+          const membershipUser = await db.findOne({ client, query:`SELECT * FROM rel_inscripciones WHERE id_usuario='${body.idUsuario}' AND estatus = true`})
 
           if(membershipUser.code !== 200){
-            await client.query('ROLLBACK');
+            await client.query("ROLLBACK");
             return res.status(membershipUser.code).send({
               mensaje:'Ocurrio un error al validar la informacion'
             });
           }
 
           if(!membershipUser.data){
-            await client.query('ROLLBACK');
+            await client.query("ROLLBACK");
             return res.status(400).send({
               mensaje:'El usuario no cuenta con una membresia activa'
             });
@@ -188,30 +188,30 @@ async function createAgendaActivities( req, res ) {
           const actitividad = await db.findOne({ client, query:`SELECT * FROM ca_actividades WHERE id = '${body.idActividad}' AND estatus=true` })
 
           if(actitividad.code !==200){
-            await client.query('ROLLBACK');
+            await client.query("ROLLBACK");
             return res.status(actitividad.code).send({
               mensaje:'Ocurrio un error al validar la informacion'
             });
           }
 
           if(!actitividad.data){
-            await client.query('ROLLBACK');
+            await client.query("ROLLBACK");
             return res.status(400).send({
               mensaje:'La actividad no se encuentra registrada o esta inactiva'
             });
           }
 
-          const countActividad = await db.count({client, query:`SELECT count(*) FROM ca_agenda_actividades WHERE id_actividad = '${body.idActividad}' `})
+          const countActividad = await db.count({client, query:`SELECT count(*) FROM ca_agenda_actividades WHERE id_actividad = ${body.idActividad} `})
 
           if(countActividad.code !== 200){
-            await client.query('ROLLBACK');
+            await client.query("ROLLBACK");
             return res.status(countActividad.code).send({
               mensaje:'Ocurrio un error al validar la informacion'
             });
           }
 
           if(countActividad.data >= actitividad.data.cupo){
-            await client.query('ROLLBACK');
+            await client.query("ROLLBACK");
             return res.status(countActividad.data).send({
               mensaje:'Se ha alcanzado el numero limite de personas para esta actividad'
             });
@@ -225,17 +225,44 @@ async function createAgendaActivities( req, res ) {
             values:[idCita, body.idUsuario, body.idActividad, 'pendiente', true],
           });
 
+          if(registerDateActivity.code !== 200){
+            await client.query("ROLLBACK");
+            return res.status(registerDateActivity.code).send({
+              mensaje: 'Ocurrio un error al registrar la cita para la actividad'
+            });
+          }
+      
+          if(!registerDateActivity.data) {
+            await client.query("ROLLBACK");
+            return res.status(400).send({
+              mensaje: 'Ocurrio un error al registrar la cita de la actividad'
+            })
+          }
 
+          const activityCreated = await db.findAll({ client, query:`SELECT aa.folio, aa.asistencia, ac.descripcion, ac.fecha, ac.hora_inicio, ac.hora_fin
+            FROM ca_agenda_actividades aa
+            INNER JOIN ca_actividades ac
+            ON aa.id_actividad = ac.id
+            WHERE aa.id_usuario = '${body.idUsuario}' AND aa.id_actividad = '${body.idActividad}' `});
 
+          
+            if( activityCreated.code !== 200 ){
+              return res.status(activityCreated.code).send({
+              mensaje:'Ocurrio un error al mostrar la actividad creada'
+              });
+            }
 
-
-
-
-        await client.query('COMMIT');
+            if( !activityCreated.data){
+              return res.status(400).send({
+              mensaje:'No se pudo encontrar la actividad creada'
+              })
+            }
+          
+        await client.query("COMMIT");
 
         return res.status(200).send({
             mensaje:`Agenda de actividades`,
-            data: actitividad.data
+            data: activityCreated.data
         })
     }catch (error) {
         console.log(error);
