@@ -5,6 +5,27 @@ const { regex } = require("../config/config");
 const check = require('check-types');
 
 
+function getActivity({params}) {
+    const result = {
+        code: 200,
+        message: ''
+    }
+
+    if(!params.id){
+        result.code = 400;
+        result.message = 'Se requiere el id de la actividad para continuar'
+        return result;
+    }
+
+    if(!Number(params.id)){
+        result.code = 400;
+        result.message = 'El formato del id es incorrecto'
+        return result;
+    }
+
+    return result;
+}
+
 function createActivity({body}){
     const regexFecha = new RegExp(regex.fecha.pattern);
     const regexHora = new RegExp(regex.hora.pattern)
@@ -165,6 +186,7 @@ function changeStatusActivity({params}){
 
 
 module.exports={
+    getActivity,
     createActivity,
     updateActivity,
     changeStatusActivity,

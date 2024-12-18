@@ -42,7 +42,6 @@ async function getInscripciones( req, res ) {
         }
 
         return res.status(200).send({
-            mensaje:"Actividades: ",
             data:inscripciones.data
         })
     }catch (error) {

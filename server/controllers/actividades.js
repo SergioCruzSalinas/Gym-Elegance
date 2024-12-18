@@ -10,7 +10,7 @@ const { develop, plataforma, api } = require('../config/config');
 //Notas: falta hacer la paginacion y cambiar el tipo de dato de la fecha para que solo muestre la fecha en la base de datos
 
 
-//ver los usuarios
+
 
 async function getActivities( req, res ) {
     //hace falta paginacion y trasacciones en la demas acciones db
@@ -63,8 +63,67 @@ async function getActivities( req, res ) {
 
 };
 
+async function getActivity(req, res) {
+  let client = null;
+  try {
+    const { params } = req 
+    const val = await rules.getActivity({params});
 
-//crear un usuario (acabado)
+    if(val.code !== 200) {
+      return res.status(val.code).send({
+        mensaje: val.message
+      })
+    }
+
+    client = new Client(develop)
+    try {
+      await client.connect();
+      console.log(pc.blue("Connected to PostgreSQL database"));
+    } catch (err) {
+      console.log(err);
+      console.error(pc.red('Error: connecting to PostgreSQL database'));
+      return res.status(500).send({
+        mensaje: `Lo sentimos, no fue posible registrar la actividad`,
+      });
+    }
+
+    const activity = await db.findOne({ client, query: `SELECT * FROM ca_actividades WHERE id = ${params.id} `});
+
+    if(activity.code !== 200) {
+      return res.status(activity.code).send({
+        mensaje: 'Ocurrio un error al validar la informacion'
+      });
+    }
+
+    if(!activity.data){
+      return res.status(400).send({
+        mensaje: 'La actividad no se encuentra registrada'
+      });
+    }
+
+    return res.status(200).send({
+      data: activity.data
+    })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      mensaje: api.errorGeneral,
+    });
+  } finally {
+    // close the connection when done
+    if (client) {
+      try {
+        await client.end();
+        console.log(pc.blue('Connection to PostgreSQL closed'));
+      } catch (err) {
+        console.log(err);
+        console.log(pc.red('Error closing connection'));
+      }
+    }
+  }
+  
+}
+
 
 async function createActivity( req, res ) {
     let client=null;
@@ -92,7 +151,8 @@ async function createActivity( req, res ) {
             });
           }
 
-        const actividades=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE fecha='${body.fecha}' AND hora_inicio='${body.horaInicio}'`})
+        const actividades=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE fecha='${body.fecha}' 
+                                                           AND hora_inicio='${body.horaInicio}'`})
 
 
         if(actividades.code !== 200){
@@ -116,6 +176,23 @@ async function createActivity( req, res ) {
             })  
          }
 
+         const coachActive = await db.findOne({client, query: ` SELECT * FROM ca_usuarios WHERE id = '${body.idInstructor}' 
+                                                                AND id_rol = 2 AND estatus = true `});
+
+        if( coachActive.code !== 200) {
+          await client.query('ROLLBACK')
+          return res.status(coachActive.code).send({
+            mensaje: 'Ocurrio un error al verificar los datos'
+          });
+        }
+        
+        if( !coachActive.data ) {
+          await client.query('ROLLBACK');
+          return res.status(400).send({
+            mensaje: 'El instructos se encuentra inactivo o no esta registrado'
+          })
+        }
+
         const count=await db.count({client, query:'SELECT count(*) FROM ca_actividades;'})
 
         if(count.code !== 200){
@@ -132,7 +209,7 @@ async function createActivity( req, res ) {
         const registrarActividad=await db.insert({
             client, 
             insert:'INSERT INTO ca_actividades(id, descripcion, estatus, cupo, id_instructor, hora_inicio, hora_fin, fecha ) VALUES($1, $2, $3, $4, $5, $6, $7, $8)',
-            values:[idActividad, body.descripcion, true, body.cupo, body.idInstructor, body.horaInicio, body.horaFin, body.fecha]
+            values:[idActividad.trim(), body.descripcion.trim(), true, body.cupo.trim(), body.idInstructor.trim(), body.horaInicio.trim(), body.horaFin.trim(), body.fecha.trim()]
         });
 
         if(registrarActividad.code !==200){
@@ -175,7 +252,7 @@ async function createActivity( req, res ) {
     
 };
 
-//editar un usuario
+
 
 async function updateActivity( req, res) {
     let client=null;
@@ -251,7 +328,7 @@ async function updateActivity( req, res) {
           const  updateActivity= await db.update({
             client,
             update:`UPDATE ca_actividades SET descripcion=$1, cupo=$2, id_instructor=$3, hora_inicio=$4, hora_fin=$5, fecha=$6 WHERE id=$7` ,
-            values:[body.descripcion, body.cupo, body.idInstructor , body.horaInicio, body.horaFin, body.fecha, params.id]
+            values:[body.descripcion.trim(), body.cupo, body.idInstructor.trim() , body.horaInicio.trim(), body.horaFin.trim(), body.fecha.trim(), params.id.trim()]
           })
 
           if(updateActivity.code !== 200){
@@ -293,7 +370,6 @@ async function updateActivity( req, res) {
 
 
 
-//cambiar el estatus de una actividad
 async function changeStatusActivity( req, res ) {
     let client=null;
 
@@ -393,10 +469,10 @@ async function changeStatusActivity( req, res ) {
 
 
 module.exports={
-    getActivities,
-    createActivity,
-    updateActivity,
-    changeStatusActivity,
-
+  getActivity,
+  getActivities,
+  createActivity,
+  updateActivity,
+  changeStatusActivity,
 
 }
