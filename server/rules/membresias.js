@@ -2,14 +2,15 @@
 const check = require('check-types');
 
 function getMembership({ params }) {
-    const result={
-        code:200,
-        message:''
+    const result = {
+        code: 200,
+        message: ''
     };
 
     if (!params.id && !check.string(params.id)) {
         result.code = 400;
-        result.message = 'Se requiere el id del usuario o la clave del usuario'
+        result.message = 'Se requiere el id del usuario o la clave del usuario';
+
         return result;
     }
 
@@ -29,25 +30,25 @@ function createMembership({body}){
         return result
     };
 
-    if(body.mesDuracion === undefined || body.mesDuracion === null){
+    if(body.mes_duracion === undefined || body.mes_duracion === null){
         result.code=400;
         result.message='Se requiere el de mes de duracion'
         return result;
     }
 
-    if(!Number.isInteger(body.mesDuracion)){
+    if(!Number.isInteger(body.mes_duracion)){
         result.code=400;
         result.message='ingrese los meses de duracion como un numero'
         return result;
     }
 
-    if(body.diasDuracion===undefined || body.diasDuracion===null){
+    if(body.dias_duracion===undefined || body.dias_duracion===null){
         result.code=400
         result.message='se requiere el numero de dias de duracion'
         return result
     }
 
-    if(!Number.isInteger(body.mesDuracion)){
+    if(!Number.isInteger(body.dias_duracion)){
         result.code=400;
         result.message='ingrese los dias de duracion como un numero'
         return result;
@@ -92,25 +93,25 @@ function updateMembership({body, params}){
         return result
     };
 
-    if(body.mesDuracion === undefined || body.mesDuracion === null){
+    if(body.mes_duracion === undefined || body.mes_duracion === null){
         result.code=400;
         result.message='Se requiere el de mes de duracion'
         return result;
     }
 
-    if(!Number.isInteger(body.mesDuracion)){
+    if(!Number.isInteger(body.mes_duracion)){
         result.code=400;
         result.message='Ingrese los meses de duracion como un numero'
         return result;
     }
 
-    if(body.diasDuracion===undefined || body.diasDuracion===null){
+    if(body.dias_duracion===undefined || body.dias_duracion===null){
         result.code=400
         result.message='se requiere el numero de dias de duracion'
         return result
     }
 
-    if(!Number.isInteger(body.mesDuracion)){
+    if(!Number.isInteger(body.dias_duracion)){
         result.code=400;
         result.message='Ingrese los dias de duracion como un numero'
         return result;

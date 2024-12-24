@@ -67,7 +67,7 @@ async function getMembership( req, res) {
     const { params } = req;
     const val = rules.getMembership({ params });
 
-    if(val.rules !== 200) {
+    if(val.code !== 200) {
       return res.status(val.code).send({
         mensaje: val.message
       });
@@ -90,14 +90,36 @@ async function getMembership( req, res) {
 
     if( membership.code !== 200){
       return res.status(membership.code).send({
-        message: 'Ocurrio un error al obtener la membresia'
+        mensaje: 'Ocurrio un error al obtener la membresia'
       });
     }
-    res.status(200).send(
-      membership.data
-    )
+
+    if(!membership.data){
+      return res.status(400).send({
+        mensaje: 'La membresia no se encuentra registrada'
+      })
+    }
+
+    return res.status(200).send({
+      data: membership.data
+    })
+    
   } catch (error) {
     console.log(error);
+    return res.status(500).send({
+      mensaje: api.errorGeneral,
+    });
+  } finally {
+    // close the connection when done
+    if (client) {
+      try {
+        await client.end();
+        console.log(pc.blue('Connection to PostgreSQL closed'));
+      } catch (err) {
+        console.log(err);
+        console.log(pc.red('Error closing connection'));
+      }
+    }
   }
   
 }
@@ -131,7 +153,7 @@ async function createMembership( req, res ) {
             });
           }
 
-        const membresia=await db.findOne({client, query:`SELECT * FROM ca_membresias WHERE tipo='${body.tipo}' `})
+        const membresia = await db.findOne({client, query:`SELECT * FROM ca_membresias WHERE tipo='${body.tipo}' `})
         if(membresia.code !== 200){
             await client.query('ROLLBACK');
             return res.status(membresia.code).send({
@@ -165,7 +187,7 @@ async function createMembership( req, res ) {
         const registrarMembresia=await db.insert({
             client, 
             insert:'INSERT INTO ca_membresias(id, tipo, descripcion, precio, mes_duracion, dias_duracion ) VALUES($1, $2, $3, $4, $5, $6)',
-            values:[idMembresia, body.tipo, body.descripcion, body.precio, body.mesDuracion, body.diasDuracion]
+            values:[idMembresia, body.tipo, body.descripcion, body.precio, body.mes_duracion, body.dias_duracion]
         });
 
         if(registrarMembresia.code !==200){
@@ -255,7 +277,7 @@ async function updateMembership( req, res) {
           const  updateMembership= await db.update({
             client,
             update:`UPDATE ca_membresias SET tipo=$1, descripcion=$2, precio=$3, mes_duracion=$4, dias_duracion=$5 WHERE id=$6` ,
-            values:[body.tipo, body.descripcion, body.precio, body.mesDuracion, body.diasDuracion, membresia.data.id]
+            values:[body.tipo, body.descripcion, body.precio, body.mes_duracion, body.dias_duracion, membresia.data.id]
           })
 
           if(updateMembership.code !== 200){
