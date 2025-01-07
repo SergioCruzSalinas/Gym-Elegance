@@ -29,19 +29,19 @@ function createCoach({ body }){
         message: '',
     };
 
-    if(!body.nombreUsuario || !check.string(body.nombreUsuario)){
+    if(!body.nombre || !check.string(body.nombre)){
         result.code=400;
         result.message="se requiere el nombre del usuarios";
         return result;
     };
 
-    if(!body.correoElectronico || !check.string(body.correoElectronico)){
+    if(!body.correo_electronico || !check.string(body.correo_electronico)){
         result.code=400;
         result.message="Se requiere un correo electronico"
         return result;
     }
 
-    if(!isEmail(body.correoElectronico)){
+    if(!isEmail(body.correo_electronico)){
         result.code=400;
         result.message="El formato del correo electronico no es correcto"
     }
@@ -80,19 +80,19 @@ function updateCoach({ params, body }){
         return result
     };
     
-    if(!body.nombreUsuario || !check.string(body.nombreUsuario)){
+    if(!body.nombre || !check.string(body.nombre)){
         result.code=400;
         result.message="se requiere el nombre del usuario";
         return result;
     };
     
-    if(!body.correoElectronico || !check.string(body.correoElectronico)){
+    if(!body.correo_electronico || !check.string(body.correo_electronico)){
         result.code=400;
         result.message="Se requiere un correo electronico"
         return result;
     };
     
-    if(!isEmail(body.correoElectronico)){
+    if(!isEmail(body.correo_electronico)){
         result.code=400;
         result.message="El formato del correo electronico no es correcto"
     };

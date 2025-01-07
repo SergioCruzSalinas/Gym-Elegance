@@ -2,12 +2,14 @@
 
 const pc = require('picocolors')
 const db=require('../db/index')
+const { isUUID } = require("validator");
+
 
 const rules= require('../rules/inscripciones')
 const Client = require('pg/lib/client');
-const { develop, plataforma, api, regex } = require('../config/config');
-const { query } = require('express');
-const { database } = require('pg/lib/defaults');
+const { develop, api, regex } = require('../config/config');
+const { formatDate } = require('./utils');
+
 
 //Notas: falta hacer la paginacion y cambiar el tipo de dato de la fecha para que solo muestre la fecha en la base de datos
 
@@ -86,21 +88,70 @@ async function getInscripcion( req, res ) {
           console.log(error);
       }
 
-      const inscripcion=await db.findOne({client, query:`SELECT * FROM rel_inscripciones WHERE id_usuario = '${params.id}' AND estatus = true `})
+      if(isUUID(params.id.trim())){
+        const inscripcionUsuario = await db.findOne({client, query:`SELECT * FROM rel_inscripciones WHERE id_usuario = '${params.id}' AND estatus = true`})
 
-      if( inscripcion.code !==200){
-          return res.status(500).send({
-              mensaje:"Ocurrio un error al mostrar la inscripcion"
-          });
-      }
+        if( inscripcionUsuario.code !== 200){
+          return res.status(inscripcionUsuario.code).send({
+            data: "Ocurrio un error al ver la inscripcion"
+          })
+        }
 
-      if(!inscripcion.data){
-        return res.status(400).send({
-          mensaje:'No se pudo encontrar la inscripcion'
+        if( !inscripcionUsuario.data) {
+          return res.status(400).send({
+            data: "Inscripción no encontrada o su vigencia ha expirado."
+          })
+        }
+
+        const fechaInicio = formatDate(inscripcionUsuario.data.fecha_inicio)
+        const fechaExpiracion = formatDate(inscripcionUsuario.data.fecha_expiracion)
+
+
+        return res.status(200).send({
+          data: {
+            id: inscripcionUsuario.data.id,
+            id_usuario: inscripcionUsuario.data.id_usuario,
+            id_membresia: inscripcionUsuario.data.id_membresia,
+            fecha_inicio: fechaInicio,
+            estatus: inscripcionUsuario.data.estatus,
+            fecha_expiracion: fechaExpiracion,
+
+
+          }
         });
+
       }
 
-      return res.status(200).send(inscripcion.data)
+      const inscripcionFolio = await db.findOne({client, query:`SELECT * FROM rel_inscripciones WHERE id = '${params.id}'`});
+
+      if( inscripcionFolio.code !==200){
+        return res.status(inscripcionFolio.code).send({
+            mensaje:"Ocurrio un error al mostrar la inscripcion"
+        });
+    }
+
+    if(!inscripcionFolio.data){
+      return res.status(400).send({
+        mensaje: 'No se encuentra la inscripcion'
+      });
+    }
+
+    const fechaInicio = formatDate(inscripcionFolio.data.fecha_inicio)
+    const fechaExpiracion = formatDate(inscripcionFolio.data.fecha_expiracion)
+
+    return res.status(200).send({
+      data: {
+        id: inscripcionFolio.data.id,
+        id_usuario: inscripcionFolio.data.id_usuario,
+        id_membresia: inscripcionFolio.data.id_membresia,
+        fecha_inicio: fechaInicio,
+        estatus: inscripcionFolio.data.estatus,
+        fecha_expiracion: fechaExpiracion,
+      }
+
+    });
+
+      
       
   }catch (error) {
       console.log(error);
@@ -151,7 +202,7 @@ async function createInscripcion( req, res ) {
             });
           }
 
-          const usuario = await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${body.idUsuario}'`});
+          const usuario = await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${body.id_usuario}'`});
 
           if( usuario.code !== 200 ){
             await client.query('ROLLBACK')
@@ -167,7 +218,7 @@ async function createInscripcion( req, res ) {
             });
           }
 
-          const membresiaActiva = await db.findOne({client, query:`SELECT * FROM ca_membresias WHERE id=${body.idMembresia}`})
+          const membresiaActiva = await db.findOne({client, query:`SELECT * FROM ca_membresias WHERE id=${body.id_membresia}`})
 
           if( membresiaActiva.code !== 200 ){
             await client.query('ROLLBACK');
@@ -198,14 +249,14 @@ async function createInscripcion( req, res ) {
           
           //Se crea la fecha de expiracion de la inscripcion
 
-          const finalInscripcion= await calcularFechaFinalizacion(body.fechaInicio, membresiaActiva.data.mes_duracion, membresiaActiva.data.dias_duracion)
+          const finalInscripcion= await calcularFechaFinalizacion(body.fecha_inicio, membresiaActiva.data.mes_duracion, membresiaActiva.data.dias_duracion)
 
           console.log('finalInscripcion*********', finalInscripcion)
 
           const crearInscripcion= await db.insert({
             client,
             insert:'INSERT INTO rel_inscripciones(id, id_usuario, id_membresia, estatus, fecha_inicio, fecha_expiracion) VALUES($1, $2, $3, $4, $5, $6)',
-            values:[clave, body.idUsuario, body.idMembresia, true, body.fechaInicio, finalInscripcion]
+            values:[clave, body.id_usuario , body.id_membresia, true, body.fecha_inicio, finalInscripcion]
           })
 
           if( crearInscripcion.code !==200 ){
@@ -292,7 +343,7 @@ async function updateInscripcion( req, res) {
             })
           }
 
-          const usuario = await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${body.idUsuario}' `})
+          const usuario = await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${body.id_usuario}' `})
 
           if( usuario.code !== 200 ){
             await client.query('ROLLBACK');
@@ -312,11 +363,9 @@ async function updateInscripcion( req, res) {
           const fechaInicioDB = inscripcion.data.fecha_inicio.toISOString().split('T')[0]; // Convierte a 'YYYY-MM-DD'
           const fecha = fechaActual.toISOString().split('T')[0]; // Convierte a 'YYYY-MM-DD'
 
-          console.log('Fecha actual:', fecha);
-          console.log('Fecha en la base de datos:', fechaInicioDB);
-          console.log('Fecha de inicio a editar:', body.fechaInicio);
+
           
-          if (body.fechaInicio !== fechaInicioDB) {
+          if (body.fecha_inicio !== fechaInicioDB) {
             if ( fecha > fechaInicioDB) {
               await client.query('ROLLBACK');
               return res.status(400).send({
@@ -325,7 +374,7 @@ async function updateInscripcion( req, res) {
             }
           }
 
-          const membresiaActiva = await db.findOne({ client, query:` SELECT * FROM ca_membresias WHERE id='${body.idMembresia}' AND estatus= true `})
+          const membresiaActiva = await db.findOne({ client, query:` SELECT * FROM ca_membresias WHERE id='${body.id_membresia}' AND estatus= true `})
 
           if( membresiaActiva.code !== 200 ){
             await client.query('ROLLBACK')
@@ -341,12 +390,12 @@ async function updateInscripcion( req, res) {
             })
           }
 
-          const finalInscripcion= await calcularFechaFinalizacion(body.fechaInicio, membresiaActiva.data.mes_duracion, membresiaActiva.data.dias_duracion)
+          const finalInscripcion= await calcularFechaFinalizacion(body.fecha_inicio, membresiaActiva.data.mes_duracion, membresiaActiva.data.dias_duracion)
 
           const  updateInscripcion= await db.update({
             client,
             update:`UPDATE rel_inscripciones SET id_usuario=$1, id_membresia=$2, fecha_inicio=$3, fecha_expiracion=$4  WHERE id=$5` ,
-            values:[body.idUsuario, body.idMembresia, body.fechaInicio, finalInscripcion, params.id]
+            values:[body.id_usuario, body.id_membresia, body.fecha_inicio, finalInscripcion, params.id]
           })
 
           if(updateInscripcion.code !== 200){
@@ -366,6 +415,7 @@ async function updateInscripcion( req, res) {
         await client.query('COMMIT');
         return res.status(200).send({
             mensaje:`Se actualizo la informacion de la inscripcion (${params.id})`,
+            data: inscripcion.data,
         })
     }catch (error) {
         console.log(error);

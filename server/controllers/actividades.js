@@ -6,6 +6,7 @@ const db=require('../db/index')
 const rules= require('../rules/actividades')
 const Client = require('pg/lib/client');
 const { develop, plataforma, api } = require('../config/config');
+const { formatHour, formatDate } = require('./utils');
 
 //Notas: falta hacer la paginacion y cambiar el tipo de dato de la fecha para que solo muestre la fecha en la base de datos
 
@@ -101,8 +102,22 @@ async function getActivity(req, res) {
       });
     }
 
+    const formatFecha = formatDate( activity.data.fecha);
+    const horaInicio = formatHour(activity.data.hora_inicio);
+    const horaFin = formatHour(activity.data.hora_fin)
+
+
     return res.status(200).send({
-      data: activity.data
+      data: {
+        id: activity.data.id,
+        id_instructor: activity.data.id_instructor,
+        descripcion: activity.data.descripcion,
+        estatus: activity.data.estatus,
+        cupo: activity.data.cupo,
+        fecha: formatFecha,
+        hora_inicio: horaInicio,
+        hora_fin: horaFin,
+      }
     })
   } catch (error) {
     console.log(error);
@@ -151,8 +166,8 @@ async function createActivity( req, res ) {
             });
           }
 
-        const actividades=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE fecha='${body.fecha}' 
-                                                           AND hora_inicio='${body.horaInicio}'`})
+        const actividades=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE fecha='${body.fecha.trim()}' 
+                                                           AND hora_inicio='${body.hora_inicio.trim()}'`})
 
 
         if(actividades.code !== 200){
@@ -169,15 +184,15 @@ async function createActivity( req, res ) {
             });
         }
         
-        if (body.horaInicio >= body.horaFin) {
+        if (body.hora_inicio >= body.hora_fin) {
             await client.query('ROLLBACK');
             return res.status(400).send({
                 mensaje:"La hora de inicio no puede ser mayor o igual a la hora que finaliza la actividad"
             })  
          }
 
-         const coachActive = await db.findOne({client, query: ` SELECT * FROM ca_usuarios WHERE id = '${body.idInstructor}' 
-                                                                AND id_rol = 2 AND estatus = true `});
+         const coachActive = await db.findOne({client, query: ` SELECT * FROM ca_usuarios WHERE id = '${body.id_instructor.trim()}' 
+                                                                AND id_rol = 3 AND estatus = true `});
 
         if( coachActive.code !== 200) {
           await client.query('ROLLBACK')
@@ -209,7 +224,7 @@ async function createActivity( req, res ) {
         const registrarActividad=await db.insert({
             client, 
             insert:'INSERT INTO ca_actividades(id, descripcion, estatus, cupo, id_instructor, hora_inicio, hora_fin, fecha ) VALUES($1, $2, $3, $4, $5, $6, $7, $8)',
-            values:[idActividad.trim(), body.descripcion.trim(), true, body.cupo.trim(), body.idInstructor.trim(), body.horaInicio.trim(), body.horaFin.trim(), body.fecha.trim()]
+            values:[idActividad, body.descripcion.trim(), true, body.cupo, body.id_instructor.trim(), body.hora_inicio.trim(), body.hora_fin.trim(), body.fecha.trim()]
         });
 
         if(registrarActividad.code !==200){
@@ -296,11 +311,11 @@ async function updateActivity( req, res) {
             })
           }
 
-          if(body.fecha !== actividad.data.fecha.toISOString().split('T')[0] && body.horaInicio !==actividad.data.hora_inicio){
+          if(body.fecha !== actividad.data.fecha.toISOString().split('T')[0] && body.hora_inicio !==actividad.data.hora_inicio){
             console.log(body.fecha)
             console.log(actividad.data)
 
-            const actividadesProgramadas=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE fecha='${body.fecha}' AND hora_inicio='${body.horaInicio}'`})
+            const actividadesProgramadas=await db.findOne({client, query:`SELECT * FROM ca_actividades WHERE fecha='${body.fecha}' AND hora_inicio='${body.hora_inicio}'`})
 
             if(actividadesProgramadas.code !== 200){
                 await client.query('ROLLBACK');
@@ -328,7 +343,7 @@ async function updateActivity( req, res) {
           const  updateActivity= await db.update({
             client,
             update:`UPDATE ca_actividades SET descripcion=$1, cupo=$2, id_instructor=$3, hora_inicio=$4, hora_fin=$5, fecha=$6 WHERE id=$7` ,
-            values:[body.descripcion.trim(), body.cupo, body.idInstructor.trim() , body.horaInicio.trim(), body.horaFin.trim(), body.fecha.trim(), params.id.trim()]
+            values:[body.descripcion.trim(), body.cupo, body.id_instructor.trim() , body.hora_inicio.trim(), body.hora_fin.trim(), body.fecha.trim(), params.id.trim()]
           })
 
           if(updateActivity.code !== 200){
@@ -348,6 +363,7 @@ async function updateActivity( req, res) {
         await client.query('COMMIT');
         return res.status(200).send({
             mensaje:`Se actualizo la informacion de la actividad (${actividad.data.descripcion})`,
+            data: actividad.data,
         })
     }catch (error) {
         console.log(error);

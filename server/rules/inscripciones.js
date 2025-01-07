@@ -11,7 +11,7 @@ function getInscripcion({params}){
 
     if(!params.id || !check.string(params.id)){
         result.code=400;
-        result.message='Se requiere el id del usuario para ver su inscripcion'
+        result.message='Se requiere el id para ver la inscripcion'
         return result;
     }
 
@@ -27,31 +27,31 @@ function createInscripcion({body}){
         message:'',
     };
 
-    if(!body.idUsuario || !check.string(body.idUsuario)){
+    if(!body.id_usuario || !check.string(body.id_usuario)){
         result.code=400;
         result.message='Se requiere el id del usuario';
         return result;
     }
 
-    if(!isUUID(body.idUsuario)){
+    if(!isUUID(body.id_usuario)){
         result.code=400;
         result.message='El formato del id del usuario es incorrecto';
         return result;
     }
 
-    if(!body.idMembresia){
+    if(!body.id_membresia){
         result.code=400;
         result.message='Se requiere el id de la membresia para continuar';
         return result;
     }
 
-    if(!body.fechaInicio || !check.string(body.fechaInicio)){
+    if(!body.fecha_inicio || !check.string(body.fecha_inicio)){
         result.code=400;
         result.message='Se requiere la fecha de inicio para continuar';
         return result;
     }
 
-    if(!regexFecha.test(body.fechaInicio)){
+    if(!regexFecha.test(body.fecha_inicio)){
         result.code=400;
         result.message='El formato de la fecha debe ser YYYY-MM-DD';
         return result;
@@ -83,37 +83,37 @@ function updateInscripcion({params, body}){
         return result;
     }
 
-    if(!body.idUsuario || !check.string(body.idUsuario)){
+    if(!body.id_usuario || !check.string(body.id_usuario)){
         result.code=400;
         result.message='Se requiere el id del usuario';
         return result;
     }
 
-    if(!isUUID(body.idUsuario)){
+    if(!isUUID(body.id_usuario)){
         result.code=400;
         result.message='El formato del id del usuario es incorrecto';
         return result;
     }
 
-    if(!body.idMembresia){
+    if(!body.id_membresia){
         result.code=400;
         result.message='Se requiere el id de la membresia para continuar';
         return result;
     }
 
-    if( !Number.isInteger(body.idMembresia)){
+    if( !Number.isInteger(body.id_membresia)){
         result.code=400;
         result.message='El id de la membresia se requiere como un numero entero';
         return result;
     }
 
-    if(!body.fechaInicio || !check.string(body.fechaInicio)){
+    if(!body.fecha_inicio || !check.string(body.fecha_inicio)){
         result.code=400;
         result.message='Se requiere la fecha de inicio para continuar';
         return result;
     }
 
-    if(!regexFecha.test(body.fechaInicio)){
+    if(!regexFecha.test(body.fecha_inicio)){
         result.code=400;
         result.message='El formato de la fecha debe ser YYYY-MM-DD';
         return result;

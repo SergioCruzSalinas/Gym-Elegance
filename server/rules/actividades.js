@@ -35,7 +35,7 @@ function createActivity({body}){
         message:''
     };
 
-    if(!body.idInstructor || !check.string(body.idInstructor || !isUUID(body.idInstructor))){
+    if(!body.id_instructor || !check.string(body.id_instructor || !isUUID(body.id_instructor))){
         result.code=400;
         result.message='Se requiere el id del instructor';
         return result
@@ -65,26 +65,26 @@ function createActivity({body}){
         return result
     }
 
-    if(!body.horaInicio  || !check.string(body.horaInicio)){
+    if(!body.hora_inicio  || !check.string(body.hora_inicio)){
         result.code=400;
         result.message='Ingrese la hora en la que inicia la actividad';
         return result;
     }
 
-    if(!regexHora.test(body.horaInicio)){
+    if(!regexHora.test(body.hora_inicio)){
         result.code=400;
         result.message='El formato de la hora deber ser HH:MM y uso de las 24 hrs.';
         return result;
     }
 
     
-    if(!body.horaFin  || !check.string(body.horaFin)){
+    if(!body.hora_fin  || !check.string(body.hora_fin)){
         result.code=400;
         result.message='Ingrese la hora en la que finaliza la actividad';
         return result;
     }
 
-    if(!regexHora.test(body.horaFin)){
+    if(!regexHora.test(body.hora_fin)){
         result.code=400;
         result.message='El formato de la hora deber ser HH:MM y uso de las 24 hrs.';
         return result;
@@ -108,7 +108,7 @@ function updateActivity({params, body}){
         return result
     }
 
-    if(!body.idInstructor || !check.string(body.idInstructor || !isUUID(body.idInstructor))){
+    if(!body.id_instructor || !check.string(body.id_instructor || !isUUID(body.id_instructor))){
         result.code=400;
         result.message='Se requiere el id del instructor';
         return result
@@ -138,26 +138,26 @@ function updateActivity({params, body}){
         return result
     }
 
-    if(!body.horaInicio  || !check.string(body.horaInicio)){
+    if(!body.hora_inicio  || !check.string(body.hora_inicio)){
         result.code=400;
         result.message='Ingrese la hora en la que inicia la actividad';
         return result;
     }
 
-    if(!regexHora.test(body.horaInicio)){
+    if(!regexHora.test(body.hora_inicio)){
         result.code=400;
         result.message='El formato de la hora deber ser HH:MM y uso de las 24 hrs.';
         return result;
     }
 
     
-    if(!body.horaFin  || !check.string(body.horaFin)){
+    if(!body.hora_fin  || !check.string(body.hora_fin)){
         result.code=400;
         result.message='Ingrese la hora en la que finaliza la actividad';
         return result;
     }
 
-    if(!regexHora.test(body.horaFin)){
+    if(!regexHora.test(body.hora_fin)){
         result.code=400;
         result.message='El formato de la hora deber ser HH:MM y uso de las 24 hrs.';
         return result;

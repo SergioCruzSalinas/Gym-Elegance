@@ -7,7 +7,7 @@ const rules=require('../rules/entrenadores');
 const Client = require('pg/lib/client');
 const { develop, plataforma, api } = require('../config/config');
 const { randomUUID, createHash } = require('crypto');
-const { query } = require('express');
+
 
 
 
@@ -26,7 +26,7 @@ async function getCoachs( req, res ) {
             console.log(error);
         }
 
-        const entrenadores=await db.findAll({client, query:`SELECT u.id, u.id_rol , u.nombre, u.telefono, u.estatus, a.correo_electronico 
+        const entrenadores=await db.findAll({client, query:`SELECT u.id, u.id_rol , u.nombre, u.telefono, a.correo_electronico 
                                                             FROM ca_usuarios u INNER JOIN ca_accesos a 
                                                             ON u.id=a.id_usuario WHERE id_rol=3`})
 
@@ -83,7 +83,9 @@ async function getCoach( req, res ) {
             console.log(error);
         }
 
-        const usuarios=await db.findOne({client, query:`SELECT * FROM ca_usuarios WHERE id='${params.id}' AND id_rol=3`})
+        const usuarios=await db.findOne({client, query:`SELECT u.id, u.id_rol , u.nombre, u.telefono, a.correo_electronico 
+                                                            FROM ca_usuarios u INNER JOIN ca_accesos a 
+                                                            ON u.id=a.id_usuario WHERE u.id = '${params.id}' AND  id_rol=3`})
 
         if(usuarios.code !==200){
             return res.status(usuarios.code).send({
@@ -149,7 +151,7 @@ async function createCoach( req, res ) {
             });
           }
 
-        const entrenador=await db.findOne({client, query:`SELECT * FROM ca_accesos WHERE correo_electronico='${body.correoElectronico}' `})
+        const entrenador=await db.findOne({client, query:`SELECT * FROM ca_accesos WHERE correo_electronico='${body.correo_electronico}' `})
 
         if(entrenador.code !== 200){
             await client.query('ROLLBACK');
@@ -168,7 +170,7 @@ async function createCoach( req, res ) {
         const registrarCoach=await db.insert({
             client, 
             insert:'INSERT INTO ca_usuarios(id, id_rol, nombre, telefono) VALUES($1, $2, $3, $4)',
-            values:[randomUUID(), plataforma.roles.instructor ,body.nombreUsuario,body.telefono]
+            values:[randomUUID(), plataforma.roles.instructor ,body.nombre.trim(), body.telefono.trim()]
         });
 
         if(registrarCoach.code !==200){
@@ -187,12 +189,12 @@ async function createCoach( req, res ) {
 
         const contrasenia=body.contrasenia;
 
-        const contraseniaCifrada=createHash('sha256').update(contrasenia).digest('base64');
+        const contraseniaCifrada=createHash('sha256').update(contrasenia.trim()).digest('base64');
 
         const registrarAcceso= await db.insert({
             client,
             insert:`INSERT INTO ca_accesos(id, id_usuario,correo_electronico,contrasenia) VALUES($1, $2, $3, $4)`,
-            values:[randomUUID(), registrarCoach.data.id, body.correoElectronico, contraseniaCifrada]
+            values:[randomUUID(), registrarCoach.data.id, body.correo_electronico.trim(), contraseniaCifrada.trim()]
         });
 
         if(registrarAcceso.code !== 200){
@@ -211,8 +213,8 @@ async function createCoach( req, res ) {
         await client.query('COMMIT');
 
         return res.status(200).send({
-            mensaje:`Se ha registrado el entrenador ${body.nombreUsuario} correctamente`,
-            data:registrarUsuario.data
+            mensaje:`Se ha registrado el entrenador ${body.nombre} correctamente`,
+            data: registrarCoach.data
         })
     }catch (error) {
         console.log(error);
@@ -280,7 +282,7 @@ async function updateCoach( req, res) {
 
           const count= await db.count({client, query:`SELECT count(*) FROM ca_usuarios usr INNER JOIN ca_accesos acs
                                                     ON usr.id=acs.id_usuario WHERE usr.id !='${coach.data.id}' 
-                                                    AND (usr.nombre='${body.nombreUsuario}' OR acs.correo_electronico='${body.correoElectronico}')`})
+                                                    AND (usr.nombre='${body.nombre}' OR acs.correo_electronico='${body.correo_electronico}')`})
 
           if(count.code !== 200){
             await client.query('ROLLBACK')
@@ -290,7 +292,7 @@ async function updateCoach( req, res) {
           } 
 
           if(count.data > 0){
-            await client.query('ROLLBACJ');
+            await client.query('ROLLBACK');
             return res.status(400).send({
               mensaje:'El nombre o el correo electronico ya se encuentran registrados'
             });
@@ -300,7 +302,7 @@ async function updateCoach( req, res) {
           const updateCoach= await db.update({
             client,
             update:`UPDATE ca_usuarios SET nombre=$1, telefono=$2 WHERE id=$3`,
-            values:[body.nombreUsuario, body.telefono, params.id]
+            values:[body.nombre, body.telefono, params.id]
           })
 
           if(updateCoach.code !== 200){
@@ -320,7 +322,7 @@ async function updateCoach( req, res) {
           const updateEmailCoach= await db.update({
             client,
             update:'UPDATE ca_accesos SET correo_electronico=$1 WHERE id_usuario=$2',
-            values:[body.correoElectronico, params.id]
+            values:[body.correo_electronico, params.id]
           });
           
           if(updateEmailCoach.code !== 200){

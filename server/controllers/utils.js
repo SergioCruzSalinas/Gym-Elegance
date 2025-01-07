@@ -75,7 +75,36 @@ async function registerActivity(client, descripcion, estatus, cupo, idCoach, fec
 }
 
 
+function formatDate(dateTime) {
+  const date = new Date(dateTime); 
+  const year = date.getFullYear(); 
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+  const day = date.getDate().toString().padStart(2, '0'); 
+
+  return `${year}-${month}-${day}`; 
+}
+
+
+
+function formatHour(dateString) {
+    
+    if (typeof dateString !== 'string' || !/^(\d{2}):(\d{2}):(\d{2})$/.test(dateString)) {
+        throw new Error('Formato de hora inválido');
+    }
+
+    
+    return dateString.slice(0, 5); 
+}
+
+
+
+
+
+
 module.exports = {
     registerMembership,
     registerActivity,
+
+    formatDate,
+    formatHour,
 };
