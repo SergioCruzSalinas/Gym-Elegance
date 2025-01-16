@@ -46,10 +46,10 @@ module.exports={
             pattern:/^\d{4}-\d{2}-\d{2}$/
         },
         hora:{
-            pattern:/^([01]\d|2[0-3]):([0-5]\d)$/
+            pattern:/^(\d{2}):(\d{2}):(\d{2})$/ 
         },
         clave:{
             pattern:/^gym-\d+$/
-        }
+        },
     }
 }

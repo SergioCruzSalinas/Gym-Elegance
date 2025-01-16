@@ -371,27 +371,102 @@ async function closeSession( req ,res ) {
     
 
 
-async function recoveryPassword( req ,res ) {
-    console.log('recuperar contraseña')
-    
-}
-
-async function restorePassword( req ,res ) {
-    console.log('restablecer contraseña')
-    
-}
-
 async function changePassword( req, res) {
-    console.log('cambiar contraseña')
-    
+    let client = null;
+    try {
+        const { user, body} = req
+
+        const val = rules.changePassword({ body });
+
+        if(val.code !== 200) {
+            return res.status(val.code).send({
+                mensaje: val.message,
+            });
+        }
+
+        client = new Client(develop);
+        try {
+            await client.connect();
+            console.log(pc.cyan('Connected to PostgreSQL database'));
+            await client.query('BEGIN')
+            console.log(pc.yellow('Transaction started'));
+        } catch (err) {
+            console.log(err);
+            console.error(pc.red('Error: connecting to PostgreSQL database'));
+            return res.status(500).send({
+              mensaje: `Lo sentimos, no fue posible recuperar la contrase{a del usuario`,
+            });          
+        }
+        
+        const contraseniaCifrada = createHash('sha256').update(body.contrasenia).digest('base64');
+
+        const rowCount = await db.count({client, query: `SELECT count(*) FROM ca_accesos 
+                                                         WHERE id_usuario = '${user.id}' 
+                                                         AND contrasenia = '${contraseniaCifrada}'`});
+
+        if(rowCount.code !== 200) {
+            await client.query('ROLLBACK');
+            return res.status(rowCount.code).send({
+                mensaje: `Ocurrió un problema al obtener los datos del usuario, favor de intentar más tarde`,
+            });
+        } 
+        
+        if(rowCount.data !== 1) {
+            await client.query('ROLLBACK');
+            return res.status(400).send({
+                mensaje: 'La contraseña actual no es valida'
+            });
+        }
+
+        const contraseniaNuevaCifrada = createHash('sha256').update(body.contraseniaNueva).digest('base64');
+
+        const rowUpdated = await db.update({
+            client,
+            update: `UPDATE ca_accesos SET contrasenia = $1, token = $2, fecha_token = $3 WHERE id_usuario = $4;`,
+            values: [contraseniaNuevaCifrada, null, null, user.id],
+          });
+          if (rowUpdated.code !== 200) {
+            await client.query('ROLLBACK');
+            return res.status(rowUpdated.code).send({
+              mensaje: `Ocurrió un problema al cambiar la contraseña, favor de intentar más tarde`,
+            });
+          }
+          if (rowUpdated.data !== 1) {
+            await client.query('ROLLBACK');
+            return res.status(400).send({
+              mensaje: `No fue posible cambiar la contraseña`,
+            });
+          }
+      
+          await client.query('COMMIT');
+      
+          return res.status(200).send({
+            mensaje: `Se ha cambiado la contraseña correctamente`,
+          });
+
+    } catch (error) {
+        console.log(error);
+        if (client) await client.query('ROLLBACK');
+        return res.status(500).send({
+          mensaje: api.errorGeneral,
+        });
+      } finally {
+        if (client) {
+          try {
+            await client.end();
+            console.log(pc.cyan('Connection to PostgreSQL closed'));
+          } catch (error) {
+            console.log(err);
+            console.log(pc.red('Error closing connection'));
+          }
+        }
+      }   
 }
 
 module.exports={
     createSession,
     checkToken,
     closeSession,
-    recoveryPassword,
-    restorePassword,
     changePassword,
 }
 

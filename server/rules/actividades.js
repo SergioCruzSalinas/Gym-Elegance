@@ -17,12 +17,6 @@ function getActivity({params}) {
         return result;
     }
 
-    if(!Number(params.id)){
-        result.code = 400;
-        result.message = 'El formato del id es incorrecto'
-        return result;
-    }
-
     return result;
 }
 

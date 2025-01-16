@@ -33,6 +33,27 @@ function createSession({ body }){
 
 }
 
+function changePassword({body}) {
+    const result = {
+        code: 200,
+        message: '',
+    }
+
+    if(!body.contrasenia || !check.string(body.contrasenia)) {
+        result.code = 400;
+        result.message = 'Se requiere la contrasenia';
+        return result;
+    }
+
+    if(!body.contraseniaNueva || !check.string(body.contraseniaNueva)) {
+        result.code = 400;
+        result.message = 'Escriba la nueva contrasenia';
+        return result;
+    }
+
+    return result;
+}
 module.exports = {
     createSession,
+    changePassword,
 }

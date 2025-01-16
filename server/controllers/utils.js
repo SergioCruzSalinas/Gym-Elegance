@@ -1,4 +1,10 @@
+const { regex } = require('../config/config');
+
+
 const db = require('../db/index');
+
+
+const regexHora = new RegExp(regex.hora)
 
 async function registerMembership(client, tipo, diasDuracion, mesDuracion, descripcion, precio) {
     const result = {
@@ -86,9 +92,9 @@ function formatDate(dateTime) {
 
 
 
-function formatHour(dateString) {
+function formatHour(dateString) {zz
     
-    if (typeof dateString !== 'string' || !/^(\d{2}):(\d{2}):(\d{2})$/.test(dateString)) {
+    if (typeof dateString !== 'string' || !regexHora.test(dateString)) {
         throw new Error('Formato de hora inválido');
     }
 

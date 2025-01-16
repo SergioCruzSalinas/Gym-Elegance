@@ -5,16 +5,12 @@ const db=require('../db/index')
 
 const rules= require('../rules/actividades')
 const Client = require('pg/lib/client');
-const { develop, plataforma, api } = require('../config/config');
+const { develop, api } = require('../config/config');
 const { formatHour, formatDate } = require('./utils');
-
-//Notas: falta hacer la paginacion y cambiar el tipo de dato de la fecha para que solo muestre la fecha en la base de datos
-
-
+const { isUUID } = require("validator");
 
 
 async function getActivities( req, res ) {
-    //hace falta paginacion y trasacciones en la demas acciones db
     let client=null;
 
     try {
@@ -50,7 +46,6 @@ async function getActivities( req, res ) {
           mensaje: api.errorGeneral,
         });
       } finally {
-        // close the connection when done
         if (client) {
           try {
             await client.end();
@@ -88,6 +83,44 @@ async function getActivity(req, res) {
       });
     }
 
+    if(isUUID(params.id)){
+
+      const activitiesCoach = await db.findAll({ client, query: `SELECT * FROM ca_actividades WHERE id_instructor = '${params.id}' `});
+      if(activitiesCoach.code !== 200) {
+        return res.status(activitiesCoach.code).send({
+          mensaje: 'Ocurrio un error al validar la informacion'
+        });
+      }
+  
+      if(!activitiesCoach.data){
+        return res.status(400).send({
+          mensaje: 'No tienes actividades asignadas'
+        });
+      }
+
+      const formattedData = activitiesCoach.data.map(activity => {
+        const formatFecha = formatDate(activity.fecha);
+
+        return {
+          id: activity.id,
+          id_instructor: activity.id_instructor,
+          descripcion: activity.descripcion,
+          estatus: activity.estatus,
+          cupo: activity.cupo,
+          fecha: formatFecha,
+          hora_inicio: activity.hora_inicio,
+          hora_fin: activity.hora_fin,
+        };
+      });
+      
+      return res.status(200).send({
+        data: formattedData,
+      });
+      
+    }
+
+   
+
     const activity = await db.findOne({ client, query: `SELECT * FROM ca_actividades WHERE id = ${params.id} `});
 
     if(activity.code !== 200) {
@@ -118,7 +151,7 @@ async function getActivity(req, res) {
         hora_inicio: horaInicio,
         hora_fin: horaFin,
       }
-    })
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).send({

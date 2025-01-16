@@ -6,7 +6,8 @@ const { randomUUID } = require('crypto');
 const pc = require('picocolors')
 const db = require('../db/index')
 const rules = require('../rules/agendaActividades');
-const { date } = require("check-types");
+const { isUUID } = require("validator");
+
 
 
 
@@ -84,28 +85,51 @@ async function getAgendaActivity( req, res ) {
             });
           }
 
-          const agendaActivities = await db.findAll({ client, query:`SELECT aa.folio, aa.asistencia, ac.descripcion, ac.fecha, ac.hora_inicio, ac.hora_fin
-                                                                      FROM ca_agenda_actividades aa
-                                                                      INNER JOIN ca_actividades ac
-                                                                      ON aa.id_actividad = ac.id
-                                                                      WHERE aa.id_usuario = '${params.id}' `});
+          if(isUUID(params.id)) {
+            const agendaActivities = await db.findAll({ client, query:`SELECT aa.folio, aa.asistencia, ac.descripcion, ac.fecha, ac.hora_inicio, ac.hora_fin
+              FROM ca_agenda_actividades aa
+              INNER JOIN ca_actividades ac
+              ON aa.id_actividad = ac.id
+              WHERE aa.id_usuario = '${params.id}' `});
 
-          if( agendaActivities.code !== 200 ){
-            return res.status(agendaActivities.code).send({
+            if( agendaActivities.code !== 200 ){
+              return res.status(agendaActivities.code).send({
               mensaje:'Ocurrio un error al mostrar tus actividades'
+              });
+            }
+
+            if( !agendaActivities.data){
+              return res.status(400).send({
+              mensaje:'No se encontraron actividades'
+              })
+            }
+            
+            return res.status(200).send({
+              mensaje:`Agenda de actividades`,
+              data:agendaActivities.data
+              });
+          }
+
+          const agendaActivity = await db.findAll({ client, query:`SELECT * FROM ca_agenda_actividades WHERE id_actividad = '${params.id}' `});
+
+          if( agendaActivity.code !== 200 ){
+            return res.status(agendaActivity.code).send({
+            mensaje:'Ocurrio un error al mostrar tus actividades'
             });
           }
 
-          if( !agendaActivities.data){
+          if( !agendaActivity.data){
             return res.status(400).send({
-              mensaje:'No se encontraron actividades'
+            mensaje:'No se encontraron actividades'
             })
           }
 
-        return res.status(200).send({
+          return res.status(200).send({
             mensaje:`Agenda de actividades`,
-            data:agendaActivities.data
-        })
+            data:agendaActivity.data
+            });
+
+
     }catch (error) {
         console.log(error);
         return res.status(500).send({
