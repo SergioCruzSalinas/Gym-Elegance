@@ -1,0 +1,1 @@
+import{u as a,G as e,O as o}from"./index-D8apdIrF.js";const s=a(),n=async()=>{var t;try{const{data:r}=await e.get(`agenda-actividades/${(t=s.user)==null?void 0:t.id}`);return r}catch(r){return o(r)?(console.log(r),{ok:!1,message:"Error al obtener la cita"}):{ok:!1,message:"Ocurrio un error al mostrar tus actividades"}}};export{n as g};

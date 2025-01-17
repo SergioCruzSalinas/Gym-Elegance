@@ -3,21 +3,18 @@
 require('dotenv').config();
 
 const express = require('express');
-const pc = require('picocolors');
-const cors = require('cors'); // Importa cors
+const cors = require('cors'); 
 const morgan = require('morgan');
 const app = express();
+const path = require('path')
 
-// Configura el puerto
 app.set('port', parseInt(process.env.PORT, 10) || 3001);
 
-// Middlewares
 app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: false }));
 app.disable('x-powered-by');
 
-// Configuración de CORS
 app.use(
   cors({
     origin: 'http://localhost:3000', // Permite solo tu frontend en desarrollo
@@ -36,6 +33,14 @@ require('./server/routes/agendaActividades')(app);
 require('./server/routes/entrenadores')(app);
 require('./server/routes/inscripciones')(app);
 require('./server/routes/login')(app);
+
+// Servir los archivos estáticos de Vue.js desde la carpeta dist
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Rutas para manejar el frontend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html')); // Enviar el index.html para todas las rutas
+});
 
 // Manejo de rutas no encontradas
 app.use('*', (req, res) => {
