@@ -1,13 +1,13 @@
-CREATE DATABASE DBGYM;
 
-CREATE TABLE ca_roles(
+
+CREATE TABLE IF NOT EXISTS ca_roles(
     id SERIAL PRIMARY KEY NOT NULL,
     orden INT NOT NULL,
     descripcion VARCHAR(50) NOT NULL,
     estatus BOOLEAN DEFAULT true NOT NULL
 );
 
-CREATE TABLE ca_usuarios(
+CREATE TABLE IF NOT EXISTS ca_usuarios(
     id UUID PRIMARY KEY NOT NULL,
     id_rol INT NOT NULL,
     nombre VARCHAR(255) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE ca_usuarios(
         ON DELETE NO ACTION
 );
 
-CREATE TABLE ca_accesos (
+CREATE TABLE IF NOT EXISTS ca_accesos (
     id UUID PRIMARY KEY NOT NULL,  
     id_usuario UUID NOT NULL,
     correo_electronico VARCHAR(255) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE ca_accesos (
         ON DELETE NO ACTION
 );
 
-CREATE TABLE ca_membresias (
+CREATE TABLE IF NOT EXISTS ca_membresias (
     id INT PRIMARY KEY NOT NULL,
     tipo VARCHAR(255) NOT NULL,
     dias_duracion INT NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE ca_membresias (
     
 );
 
-CREATE TABLE rel_inscripciones (
+CREATE TABLE IF NOT EXISTS rel_inscripciones (
     id VARCHAR PRIMARY KEY NOT NULL,
     id_usuario UUID NOT NULL,
     id_membresia INT NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE rel_inscripciones (
         ON DELETE NO ACTION
 );
 
-CREATE TABLE ca_actividades (
+CREATE TABLE IF NOT EXISTS ca_actividades (
     id INT PRIMARY KEY NOT NULL,
     id_instructor UUID NOT NULL,
     descripcion TEXT NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE ca_actividades (
     ON DELETE NO ACTION
 );
 
-CREATE TABLE ca_agenda_actividades (
+CREATE TABLE IF NOT EXISTS ca_agenda_actividades (
     folio UUID PRIMARY KEY NOT NULL,
     id_usuario UUID NOT NULL,
     id_actividad INT NOT NULL,
@@ -100,12 +100,7 @@ CREATE TABLE ca_agenda_actividades (
     ON DELETE NO ACTION
 );
 
--- agregar los roles
 
-INSERT INTO ca_roles(orden, descripcion) VALUES (1, 'Root');
-INSERT INTO ca_roles(orden, descripcion) VALUES (2, 'Admin');
-INSERT INTO ca_roles(orden, descripcion) VALUES (3, 'Instructor');
-INSERT INTO ca_roles(orden, descripcion) VALUES (4, 'Usuario');
 
 
 

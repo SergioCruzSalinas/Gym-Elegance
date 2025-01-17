@@ -2,11 +2,11 @@
 
 module.exports={
     develop:{
-        host:'localhost',
-        port:5432,
-        user:'postgres',
-        password:'Chimi10',
-        database:'dbgym'
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT ||5432,
+        user: process.env.DB_USER ||'postgres',
+        password: process.env.DB_PASSWORD ||'Chimi10',
+        database: process.env.DB_NAME ||'dbgym'
     },
     plataforma:{
         nombre:'Inscripciones',
