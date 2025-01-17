@@ -1,1 +1,0 @@
-import{G as o}from"./index-D8apdIrF.js";const e=async r=>{if(r===""||r===void 0)return{id:"",id_usuario:"",id_membresia:"",fecha_inicio:""};try{const{data:i}=await o.get(`inscripciones/${r}`);return i}catch{throw new Error("No se pudo realizar la peticion")}};export{e as g};
