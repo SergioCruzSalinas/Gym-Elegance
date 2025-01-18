@@ -4,22 +4,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors'); 
 const morgan = require('morgan');
-const { Client } = require('pg'); // Importar el cliente PostgreSQL
 const app = express();
 const path = require('path');
 
-// Configuración de la base de datos usando la URL completa con SSL
-const client = new Client({
-  connectionString: process.env.DB_URL, // Usar la URL de la base de datos
-  ssl: {
-    rejectUnauthorized: false, // Permite conexiones con certificados no verificados
-  },
-});
 
-// Intentamos conectar a la base de datos
-client.connect()
-  .then(() => console.log('Conexión exitosa a Neon!'))
-  .catch(err => console.error('Error al conectar a Neon:', err));
 
 app.set('port', parseInt(process.env.PORT, 10) || 3001);
 

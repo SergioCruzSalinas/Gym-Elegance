@@ -6,7 +6,7 @@ const { develop, plataforma, api } = require('../config/config');
 const { randomUUID, createHash } = require('crypto');
 const { query } = require('express');
 const pc = require('picocolors');
-const { registerMembership } = require('../controllers/utils'); // Importar la función correctamente
+const { registerMembership, registerActivity } = require('../controllers/utils'); // Importar la función correctamente
 
 async function insertDataBase(req, res) {
     let client = null;
@@ -150,7 +150,6 @@ async function insertDataBase(req, res) {
             values: [plataforma.roles.usuario, plataforma.roles.root, 'Usuario']
         });
 
-        // Verificar si hubo algún error en la inserción de roles
         if (createRolRoot.code !== 200 || createRolAdmin.code !== 200 || createRolCoach.code !== 200 || createRolUser.code !== 200) {
             await client.query('ROLLBACK');
             return res.status(500).send({
@@ -269,6 +268,20 @@ async function insertDataBase(req, res) {
                 mensaje: 'Ocurrió un error al agregar las membresías'
             });
         }
+
+         // agregar Actividades
+
+         const activityGymPersonal = await registerActivity(client, "Gym con Coach personal", true, 1, idCoach, "2025-06-22", "17:00", "19:00");
+         const activityGym = await registerActivity(client, "Gym", true, 1, idCoach, null, null, null);
+         const activityBox = await registerActivity(client, "Acondicionamiento y Box", true, 6, idCoach, "2025-06-22", "10:00", "11:30");
+         const activityZumba = await registerActivity(client, "Clases de Zumba", true, 10, idCoach, "2025-06-22", "15:00", "16:00");
+ 
+         if( activityGymPersonal.code !== 200 || activityGym.code !== 200 || activityBox.code !== 200 || activityZumba.code !== 200){
+             await client.query('ROLLBACK');
+             return res.status(500).send({
+                 mensaje: 'Ocurrio un error al registrar las actividades'
+             });
+         }
 
         await client.query('COMMIT');
         console.log(pc.green('Transaction completed'));
