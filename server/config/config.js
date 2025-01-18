@@ -20,7 +20,7 @@ module.exports={
     },
     secret: process.env.TOKEN_SECRET,
     api:{
-        baseEndpoint: 'https://gym-elegance-production.up.railway.app/api',
+        baseEndpoint: '/api',
         errorGeneral: 'Servicio no disponible',
         errorAuthentication: 'Es requerida la autenticación para acceder a este recurso',
         errorSinAutorizacion: 'Esta cuenta no tiene acceso a este recurso',
